@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard de Tickets{% endblock %}
+
+{% block content %}
+<style>
+body.dark-mode h4 {
+    color: #e2e8f0 !important;
+}
+</style>
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0;">
+        <li class="breadcrumb-item"><a href="{{ url_for('solicitudes.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Tickets</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4">
+    <h4 class="mb-2 mb-md-0" style="font-weight: 700; color: #1e293b;">Dashboard de Tickets</h4>
+    <div class="d-flex flex-wrap gap-2">
+        <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Actualizar">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        {% if session.rol in ['admin', 'coordinador'] %}
+        <a href="{{ url_for('solicitudes.reportes') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-chart-bar"></i> <span class="d-none d-md-inline">Ir a</span> Reportes
+        </a>
+        {% endif %}
+        <a href="{{ url_for('solicitudes.nueva') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Nuevo
+        </a>
+    </div>
+</div>
+
+<!-- Tarjetas de métricas -->
+<div class="metrics-grid mb-3">
+    <div class="metric-card" data-tab="activos" style="border-left: 4px solid #3b82f6;">
+        <div class="metric-content">
+            <i class="fas fa-tasks metric-icon" style="color: #3b82f6;"></i>
+            <div class="metric-info">
+                <div class="metric-label">Activos</div>
+                <div class="metric-value">{{ metricas.activos }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card" data-filter="Pendiente" style="border-left: 4px solid #f59e0b;">
+        <div class="metric-content">
+            <i class="fas fa-clock metric-icon" style="color: #f59e0b;"></i>
+            <div class="metric-info">
+                <div class="metric-label">Pendientes</div>
+                <div class="metric-value">{{ metricas.pendientes }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card" data-filter="Planificado" style="border-left: 4px solid #3b82f6;">
+        <div class="metric-content">
+            <i class="fas fa-calendar metric-icon" style="color: #3b82f6;"></i>
+            <div class="metric-info">
+                <div class="metric-label">Planificados</div>
+                <div class="metric-value">{{ metricas.planificados }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card" data-filter="Solucionado" style="border-left: 4px solid #10b981;">
+        <div class="metric-content">
+            <i class="fas fa-check-circle metric-icon" style="color: #10b981;"></i>
+            <div class="metric-info">
+                <div class="metric-label">Solucionados</div>
+                <div class="metric-value">{{ metricas.solucionados }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card" data-filter="Cerrado" style="border-left: 4px solid #6b7280;">
+        <div class="metric-content">
+            <i class="fas fa-lock metric-icon" style="color: #6b7280;"></i>
+            <div class="metric-info">
+                <div class="metric-label">Cerrados</div>
+                <div class="metric-value">{{ metricas.cerrados }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card" data-filter="Escalado" style="border-left: 4px solid #8b5cf6;">
+        <div class="metric-content">
+            <i class="fas fa-level-up-alt metric-icon" style="color: #8b5cf6;"></i>
+            <div class="metric-info">
+                <div class="metric-label">Escalados</div>
+                <div class="metric-value">{{ metricas.escalados }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs de navegación -->
+<ul class="nav nav-tabs mb-3" id="ticketTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="activos-tab" data-bs-toggle="tab" data-tab="activos" type="button" role="tab">
+            <i class="fas fa-tasks"></i> Activos <span class="badge bg-primary ms-1">{{ metricas.activos }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="solucionados-tab" data-bs-toggle="tab" data-tab="solucionados" type="button" role="tab">
+            <i class="fas fa-check-circle"></i> Solucionados <span class="badge bg-success ms-1">{{ metricas.solucionados }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="cerrados-tab" data-bs-toggle="tab" data-tab="cerrados" type="button" role="tab">
+            <i class="fas fa-lock"></i> Cerrados <span class="badge bg-secondary ms-1">{{ metricas.cerrados }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="historico-tab" data-bs-toggle="tab" data-tab="historico" type="button" role="tab">
+            <i class="fas fa-history"></i> Histórico
+        </button>
+    </li>
+</ul>
+
+<!-- Filtros compactos -->
+{% if session.rol in ['admin', 'coordinador'] %}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <select id="filterPrioridad" class="form-select form-select-sm">
+                    <option value="">Prioridad: Todas</option>
+                    {% for prioridad in prioridades %}
+                    <option value="{{ prioridad }}">{{ prioridad }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="filterSeccion" class="form-select form-select-sm">
+                    <option value="">Sección: Todas</option>
+                    {% for seccion in secciones %}
+                    <option value="{{ seccion }}">{{ seccion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="filterFechaInicio" class="form-control form-control-sm" placeholder="Desde">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="filterFechaFin" class="form-control form-control-sm" placeholder="Hasta">
+            </div>
+            <div class="col-md-2">
+                <button id="btnClearFilters" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12">
+                <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Buscar por #ID, descripción, solicitante... (Tip: Usa #123 o 00123 para buscar por ID)">
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row">
+            <div class="col-md-12">
+                <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Buscar por #ID, descripción...">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabla con DataTables -->
+<div class="card">
+    <div class="card-body p-0">
+        <!-- Vista Desktop: Tabla -->
+        <div class="table-responsive d-none d-md-block">
+            <table id="ticketsTable" class="table table-hover mb-0" style="font-size: 0.9rem;">
+                <thead style="background: #f8f9fa;">
+                    <tr style="color: #6c757d;">
+                        <th style="width: 70px;">ID</th>
+                        <th style="width: 110px;">ESTADO</th>
+                        <th style="width: 90px;">PRIORIDAD</th>
+                        {% if session.rol in ['admin', 'coordinador'] %}
+                        <th style="width: 130px;">SECCIÓN</th>
+                        <th style="width: 130px;">ASIGNADO A</th>
+                        {% endif %}
+                        <th style="width: 100px;">FECHA</th>
+                        {% if session.rol in ['admin', 'coordinador'] %}
+                        <th style="width: 160px;">SOLICITANTE</th>
+                        {% endif %}
+                        <th class="text-center" style="width: 90px;">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DataTables cargará los datos vía AJAX -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Vista Móvil: Cards -->
+        <div id="ticketsCards" class="d-md-none p-3">
+            <!-- Las cards se generarán dinámicamente con JavaScript -->
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+
+<script>
+var table;
+var currentTab = 'activos';
+var isAdminOrCoord = {{ 'true' if session.rol in ['admin', 'coordinador'] else 'false' }};
+var isMobile = window.innerWidth < 768;
+
+function renderMobileCards(data) {
+    var container = $('#ticketsCards');
+    container.empty();
+    
+    if (data.length === 0) {
+        container.html('<div style="text-align: center; padding: 3rem 1rem; color: #94a3b8;"><i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i><p style="font-size: 0.875rem; margin: 0;">No hay tickets para mostrar</p></div>');
+        return;
+    }
+    
+    data.forEach(function(row) {
+        var estadoColor = {
+            'Pendiente': '#f59e0b',
+            'Planificado': '#3b82f6',
+            'Solucionado': '#10b981',
+            'Cerrado': '#6b7280',
+            'Escalado': '#8b5cf6'
+        }[row[1]] || '#64748b';
+        
+        var prioridadColor = {
+            'Alta': '#ef4444',
+            'Media': '#f59e0b',
+            'Baja': '#10b981'
+        }[row[2]] || '#64748b';
+        
+        var card = `
+            <div class="ticket-card" style="border-left-color: ${estadoColor};">
+                <div class="ticket-card-header">
+                    <div class="ticket-card-id">#${row[0]}</div>
+                    <div class="ticket-badges">
+                        <span class="badge" style="background: ${estadoColor};">${row[1]}</span>
+                        <span class="badge" style="background: ${prioridadColor};">${row[2]}</span>
+                    </div>
+                </div>
+                <div class="ticket-card-grid">
+                    ${isAdminOrCoord ? `
+                    <div class="ticket-field">
+                        <div class="ticket-field-label">Sección</div>
+                        <div class="ticket-field-value">${row[3] || 'N/A'}</div>
+                    </div>
+                    <div class="ticket-field">
+                        <div class="ticket-field-label">Asignado</div>
+                        <div class="ticket-field-value">${row[4] || 'Sin asignar'}</div>
+                    </div>
+                    ` : ''}
+                    <div class="ticket-field">
+                        <div class="ticket-field-label">Fecha</div>
+                        <div class="ticket-field-value">${row[5]}</div>
+                    </div>
+                    ${isAdminOrCoord ? `
+                    <div class="ticket-field">
+                        <div class="ticket-field-label">Solicitante</div>
+                        <div class="ticket-field-value">${row[6] || 'N/A'}</div>
+                    </div>
+                    ` : `
+                    <div class="ticket-field">
+                        <div class="ticket-field-label">Estado</div>
+                        <div class="ticket-field-value">${row[1]}</div>
+                    </div>
+                    `}
+                </div>
+                <div class="ticket-card-actions">
+                    <a href="/solicitudes/${row[0]}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Ver detalles
+                    </a>
+                </div>
+            </div>
+        `;
+        container.append(card);
+    });
+}
+
+$(document).ready(function() {
+    // Configurar columnas según rol
+    var columns = [
+        { "data": 0, "orderable": true },  // ID
+        { "data": 1, "orderable": true },  // Estado
+        { "data": 2, "orderable": true }   // Prioridad
+    ];
+    
+    if (isAdminOrCoord) {
+        columns.push({ "data": 3, "orderable": true });  // Sección
+        columns.push({ "data": 4, "orderable": false }); // Asignado
+        columns.push({ "data": 5, "orderable": true });  // Fecha
+        columns.push({ "data": 6, "orderable": false }); // Solicitante
+        columns.push({ "data": 7, "orderable": false }); // Acciones
+    } else {
+        columns.push({ "data": 5, "orderable": true });  // Fecha
+        columns.push({ "data": 7, "orderable": false }); // Acciones
+    }
+    
+    // Inicializar DataTables con procesamiento del lado del servidor
+    table = $('#ticketsTable').DataTable({
+        "processing": true,
+        "serverSide": true,
+        "ajax": {
+            "url": "/api/tickets/datatable",
+            "type": "POST",
+            "data": function(d) {
+                // Agregar filtros personalizados
+                d.tab = currentTab;
+                if (isAdminOrCoord) {
+                    d.prioridad = $('#filterPrioridad').val();
+                    d.seccion = $('#filterSeccion').val();
+                    d.fecha_inicio = $('#filterFechaInicio').val();
+                    d.fecha_fin = $('#filterFechaFin').val();
+                }
+            },
+            "dataSrc": function(json) {
+                // En móvil, renderizar cards en lugar de tabla
+                if (window.innerWidth < 768) {
+                    renderMobileCards(json.data);
+                    return [];
+                }
+                return json.data;
+            }
+        },
+        "columns": columns,
+        "order": [[0, "desc"]],
+        "pageLength": 25,
+        "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json",
+            "processing": '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando...'
+        },
+        "dom": 'rt<"row mt-3"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        "drawCallback": function() {
+            // Aplicar estilos después de cargar
+            $('tbody tr').css('vertical-align', 'middle');
+        }
+    });
+    
+    // Cambio de tabs
+    $('#ticketTabs button[data-tab]').on('click', function() {
+        currentTab = $(this).data('tab');
+        $('#ticketTabs button').removeClass('active');
+        $(this).addClass('active');
+        table.ajax.reload();
+    });
+    
+    // Click en tarjetas de métricas
+    $('.metric-card[data-tab]').on('click', function() {
+        var tab = $(this).data('tab');
+        currentTab = tab;
+        $('#ticketTabs button').removeClass('active');
+        $('#ticketTabs button[data-tab="' + tab + '"]').addClass('active');
+        // Limpiar filtros de estado
+        if (isAdminOrCoord) {
+            $('#filterEstado').val('');
+        }
+        table.ajax.reload();
+    });
+    
+    $('.metric-card[data-filter]').on('click', function() {
+        var filter = $(this).data('filter');
+        
+        // Si es Cerrado o Solucionado, cambiar el tab también
+        if (filter === 'Cerrado') {
+            currentTab = 'cerrados';
+            $('#ticketTabs button').removeClass('active');
+            $('#ticketTabs button[data-tab="cerrados"]').addClass('active');
+        } else if (filter === 'Solucionado') {
+            currentTab = 'solucionados';
+            $('#ticketTabs button').removeClass('active');
+            $('#ticketTabs button[data-tab="solucionados"]').addClass('active');
+        } else {
+            // Para Pendiente, Planificado, Escalado -> ir a Activos
+            currentTab = 'activos';
+            $('#ticketTabs button').removeClass('active');
+            $('#ticketTabs button[data-tab="activos"]').addClass('active');
+        }
+        
+        table.ajax.reload();
+    });
+    
+    // Búsqueda con debounce
+    var searchTimeout;
+    $('#searchBox').on('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            table.search($('#searchBox').val()).draw();
+        }, 500);
+    });
+    
+    // Filtros
+    if (isAdminOrCoord) {
+        $('#filterPrioridad, #filterSeccion, #filterFechaInicio, #filterFechaFin').on('change', function() {
+            table.ajax.reload();
+        });
+    }
+    
+    // Limpiar filtros
+    $('#btnClearFilters').on('click', function() {
+        if (isAdminOrCoord) {
+            $('#filterPrioridad, #filterSeccion, #filterFechaInicio, #filterFechaFin, #searchBox').val('');
+        } else {
+            $('#searchBox').val('');
+        }
+        table.search('').ajax.reload();
+    });
+    
+    // Refresh
+    $('#btnRefresh').on('click', function() {
+        var btn = $(this);
+        btn.find('i').addClass('fa-spin');
+        table.ajax.reload(function() {
+            btn.find('i').removeClass('fa-spin');
+        });
+    });
+    
+    // Auto-refresh cada 2 minutos
+    setInterval(function() {
+        table.ajax.reload(null, false); // false = mantener página actual
+    }, 120000);
+});
+</script>
+
+<style>
+/* Mobile-first SaaS Design */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 8px;
+    padding: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.metric-card:active {
+    transform: scale(0.98);
+}
+
+.metric-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.metric-icon {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+.metric-info {
+    flex: 1;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+    margin-top: 0.25rem;
+}
+
+.nav-tabs {
+    border: none;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.nav-tabs .nav-link.active {
+    background: #3b82f6;
+    color: white;
+}
+
+.nav-tabs .badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+}
+
+/* Ticket Cards - Estilo Linear/Notion */
+.ticket-card {
+    background: white;
+    border-radius: 8px;
+    padding: 0.875rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 3px solid #3b82f6;
+}
+
+.ticket-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.ticket-card-id {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.ticket-badges {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.ticket-badges .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    font-weight: 600;
+}
+
+.ticket-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+    margin-bottom: 0.75rem;
+}
+
+.ticket-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ticket-field-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.ticket-field-value {
+    font-size: 0.8125rem;
+    color: #0f172a;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ticket-card-actions {
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ticket-card-actions .btn {
+    width: 100%;
+    font-size: 0.8125rem;
+    padding: 0.625rem;
+    font-weight: 600;
+}
+
+#ticketsTable_processing {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.95);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+}
+
+/* Tablet */
+
+/* Ocultar paginador en móvil */
+@media (max-width: 767px) {
+    .dataTables_length,
+    .dataTables_info,
+    .dataTables_paginate {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+    
+    .metric-card {
+        padding: 1rem;
+    }
+    
+    .nav-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .nav-tabs .nav-link {
+        font-size: 0.875rem;
+        padding: 0.625rem 1rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .metrics-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    #ticketsTable {
+        font-size: 0.8125rem;
+    }
+    #ticketsTable th, #ticketsTable td {
+        padding: 0.625rem 0.5rem;
+    }
+}
+</style>
+{% endblock %}

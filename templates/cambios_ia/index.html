@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Cambios con IA{% endblock %}
+{% block content %}
+<style>
+.cambio-card { border-left: 4px solid #8b5cf6; transition: all 0.3s; }
+.cambio-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+.badge-pendiente { background: #f59e0b; }
+.badge-activo { background: #10b981; }
+</style>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h4 style="font-weight: 700; color: #1e293b;"><i class="fas fa-brain"></i> Cambios con IA</h4>
+        <p class="text-muted">Crea cambios con IA y actívalos cuando estés listo</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('cambios_ia.nuevo') }}" class="btn btn-primary">
+            <i class="fas fa-magic"></i> Nuevo Cambio con IA
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card" style="border-left: 4px solid #f59e0b;">
+            <div class="card-body text-center">
+                <i class="fas fa-clock" style="font-size: 3rem; color: #f59e0b;"></i>
+                <h3 class="mt-2">{{ pendientes|length }}</h3>
+                <p class="text-muted mb-0">Cambios Pendientes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card" style="border-left: 4px solid #10b981;">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981;"></i>
+                <h3 class="mt-2">{{ activos|length }}</h3>
+                <p class="text-muted mb-0">Cambios Activos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 style="color: #f59e0b; font-weight: 600;"><i class="fas fa-clock"></i> Cambios Pendientes de Activar</h5>
+<div class="row mb-4">
+    {% for cambio in pendientes %}
+    <div class="col-md-6 mb-3">
+        <div class="card cambio-card">
+            <div class="card-header" style="background: #fef3c7;">
+                <div class="d-flex justify-content-between">
+                    <h6 class="mb-0" style="color: #92400e;">{{ cambio.titulo }}</h6>
+                    <span class="badge badge-pendiente">Pendiente</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">{{ cambio.descripcion }}</p>
+                <div class="mb-2">
+                    <strong>Prompt:</strong>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 13px;">
+                        "{{ cambio.prompt_usuario }}"
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-info">{{ cambio.tipo_cambio }}</span>
+                    <small class="text-muted">Creado: {{ cambio.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success btn-sm" onclick="activarCambio({{ cambio.id }})">
+                        <i class="fas fa-check"></i> Activar en Producción
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarCambio({{ cambio.id }})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% if pendientes|length == 0 %}
+    <div class="col-12">
+        <div class="alert alert-info">No hay cambios pendientes</div>
+    </div>
+    {% endif %}
+</div>
+
+<h5 style="color: #10b981; font-weight: 600;"><i class="fas fa-check-circle"></i> Cambios Activos en Producción</h5>
+<div class="row">
+    {% for cambio in activos %}
+    <div class="col-md-6 mb-3">
+        <div class="card cambio-card" style="border-left-color: #10b981;">
+            <div class="card-header" style="background: #d1fae5;">
+                <div class="d-flex justify-content-between">
+                    <h6 class="mb-0" style="color: #065f46;">{{ cambio.titulo }}</h6>
+                    <div>
+                        <span class="badge badge-activo">Activo</span>
+                        {% if cambio.validado %}
+                        <span class="badge" style="background: #6366f1;"><i class="fas fa-check-double"></i> Validado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">{{ cambio.descripcion }}</p>
+                <div class="mb-2">
+                    <span class="badge bg-info">{{ cambio.tipo_cambio }}</span>
+                    <small class="text-muted">Activado: {{ cambio.fecha_activacion.strftime('%d/%m/%Y %H:%M') if cambio.fecha_activacion else 'N/A' }}</small>
+                </div>
+                <div class="mt-3">
+                    {% if not cambio.validado %}
+                    <button class="btn btn-primary btn-sm" onclick="validarCambio({{ cambio.id }})">
+                        <i class="fas fa-check-double"></i> Validado
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-warning btn-sm" onclick="desactivarCambio({{ cambio.id }})">
+                        <i class="fas fa-pause"></i> Desactivar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% if activos|length == 0 %}
+    <div class="col-12">
+        <div class="alert alert-info">No hay cambios activos</div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function activarCambio(id) {
+    if(confirm('¿Activar este cambio en PRODUCCIÓN?')) {
+        fetch(`/cambios-ia/${id}/activar`, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            });
+    }
+}
+
+function desactivarCambio(id) {
+    if(confirm('¿Desactivar este cambio?')) {
+        fetch(`/cambios-ia/${id}/desactivar`, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            });
+    }
+}
+
+function eliminarCambio(id) {
+    if(confirm('¿ELIMINAR este cambio permanentemente?')) {
+        fetch(`/cambios-ia/${id}/eliminar`, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            });
+    }
+}
+
+function validarCambio(id) {
+    if(confirm('¿Marcar este cambio como VALIDADO? Se quitará la notificación.')) {
+        fetch(`/cambios-ia/${id}/validar`, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            });
+    }
+}
+</script>
+{% endblock %}

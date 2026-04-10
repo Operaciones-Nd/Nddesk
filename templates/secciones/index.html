@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Secciones - NDvision{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white;">
+        <h3 class="card-title"><i class="fas fa-sitemap mr-2"></i>Gestión de Secciones</h3>
+        <div class="card-tools">
+            <a href="{{ url_for('secciones.nueva') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus mr-1"></i>Nueva Sección
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Medio</th>
+                    <th>Resolutores</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for seccion in secciones %}
+                <tr>
+                    <td><strong>{{ seccion.nombre }}</strong></td>
+                    <td><span class="badge badge-info">{{ seccion.medio }}</span></td>
+                    <td>
+                        {% set resolutores = seccion.get_resolutores(seccion.id) %}
+                        {% for user in resolutores %}
+                        <span class="badge badge-secondary">{{ user.nombre }}</span>
+                        {% endfor %}
+                    </td>
+                    <td><small>{{ seccion.email_notificacion or '-' }}</small></td>
+                    <td>
+                        <a href="{{ url_for('secciones.editar', id=seccion.id) }}" class="btn btn-sm btn-info">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('secciones.eliminar', id=seccion.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar sección?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

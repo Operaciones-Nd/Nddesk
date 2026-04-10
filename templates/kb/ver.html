@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}{{ articulo.titulo }}{% endblock %}
+{% block content %}
+
+<style>
+.kb-content {
+    line-height: 1.8;
+    color: #1e293b;
+}
+.kb-content h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+.kb-content h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #1e293b;
+}
+.kb-content h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #334155;
+}
+.kb-content p {
+    margin-bottom: 1rem;
+}
+.kb-content ul, .kb-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+.kb-content li {
+    margin-bottom: 0.5rem;
+}
+.kb-content strong {
+    font-weight: 600;
+    color: #0f172a;
+}
+.kb-content code {
+    background: #f1f5f9;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: #dc2626;
+}
+.kb-content pre {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+</style>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0;">
+        <li class="breadcrumb-item"><a href="{{ url_for('kb.index') }}">Base de Conocimiento</a></li>
+        <li class="breadcrumb-item active">{{ articulo.titulo }}</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-2" style="font-weight: 700;">
+            <i class="fas fa-book mr-2"></i>{{ articulo.titulo }}
+            <span class="badge badge-primary ml-2">{{ articulo.categoria }}</span>
+        </h4>
+    </div>
+    <div>
+        <a href="{{ url_for('kb.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Contenido Principal -->
+        <div class="card mb-3">
+            <div class="card-body" style="padding: 2rem;">
+                <div class="kb-content">
+                    {{ articulo.contenido_html|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feedback -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">¿Te resultó útil este artículo?</h6>
+            </div>
+            <div class="card-body text-center">
+                <button class="btn btn-success mr-2" onclick="marcarUtil({{ articulo.id }}, true)">
+                    <i class="fas fa-thumbs-up"></i> Sí, útil ({{ articulo.util_si }})
+                </button>
+                <button class="btn btn-outline-danger" onclick="marcarUtil({{ articulo.id }}, false)">
+                    <i class="fas fa-thumbs-down"></i> No útil ({{ articulo.util_no }})
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel Lateral -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle mr-2"></i>Información del Artículo</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Autor:</strong>
+                    <div class="text-muted">{{ articulo.autor.nombre }}</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Fecha de publicación:</strong>
+                    <div class="text-muted">{{ articulo.created_at.strftime('%d/%m/%Y') }}</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Vistas:</strong>
+                    <div class="text-muted"><i class="fas fa-eye"></i> {{ articulo.vistas }}</div>
+                </div>
+                <div>
+                    <strong>Versión:</strong>
+                    <div class="text-muted">{{ articulo.version }}</div>
+                </div>
+            </div>
+        </div>
+        
+        {% if articulo.tags %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-tags mr-2"></i>Etiquetas</h6>
+            </div>
+            <div class="card-body">
+                {% for tag in articulo.tags.split(',') %}
+                <span class="badge badge-secondary mr-1 mb-1">{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if relacionados %}
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-link mr-2"></i>Artículos Relacionados</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for rel in relacionados %}
+                    <a href="{{ url_for('kb.ver', id=rel.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ rel.titulo }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-eye"></i> {{ rel.vistas }} vistas
+                                </small>
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function marcarUtil(id, util) {
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    fetch(`/kb/${id}/util`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({util: util})
+    }).then(() => {
+        setTimeout(() => location.reload(), 300);
+    });
+}
+</script>
+{% endblock %}

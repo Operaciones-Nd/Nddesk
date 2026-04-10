@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Cambio con IA{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white;">
+        <h5><i class="fas fa-brain"></i> Crear Cambio con IA</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-info-circle"></i> <strong>Importante:</strong> Los cambios se crean INACTIVOS. Debes activarlos manualmente cuando estés listo para producción.
+        </div>
+        
+        <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="mb-3">
+                <label><i class="fas fa-comment"></i> Escribe tu comando o usa una plantilla</label>
+                <textarea name="prompt" id="promptArea" class="form-control" rows="5" placeholder="Escribe tu comando aquí..." required>{{ ultimo_error if ultimo_error else '' }}</textarea>
+                {% if ultimo_error %}
+                <div class="alert alert-warning mt-2">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Hubo un error.</strong> Corrige el texto arriba y vuelve a intentar.
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header" style="background: #dbeafe;">
+                    <strong>📋 Plantillas - Click para usar</strong>
+                </div>
+                <div class="card-body">
+                    <h6 style="color: #3b82f6;">👤 CREAR USUARIO</h6>
+                    <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="usarPlantilla('crea un usuario llamado [NOMBRE] como [ROL] de [DEPARTAMENTO] contraseña [PASSWORD]')">
+                        📝 Usar Plantilla
+                    </button>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                        crea un usuario llamado <strong>[NOMBRE]</strong> como <strong>[ROL]</strong> de <strong>[DEPARTAMENTO]</strong> contraseña <strong>[PASSWORD]</strong>
+                    </div>
+                    <small class="text-muted">Roles: admin, coordinador, resolutor, solicitante</small>
+                    
+                    <hr>
+                    
+                    <h6 style="color: #f59e0b; margin-top: 15px;">🎫 CREAR TICKET</h6>
+                    <button type="button" class="btn btn-outline-warning btn-sm mb-2" onclick="usarPlantilla('crea un ticket [PRIORIDAD] sobre [DESCRIPCION]')">
+                        📝 Usar Plantilla
+                    </button>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                        crea un ticket <strong>[PRIORIDAD]</strong> sobre <strong>[DESCRIPCION]</strong>
+                    </div>
+                    <small class="text-muted">Prioridad: urgente, normal, baja</small>
+                    
+                    <hr>
+                    
+                    <h6 style="color: #8b5cf6; margin-top: 15px;">🔄 CREAR FLUJO</h6>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-2" onclick="usarPlantilla('crea un flujo [TIPO] para [TICKET_TIPO]')">
+                        📝 Usar Plantilla
+                    </button>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                        crea un flujo <strong>[TIPO]</strong> para <strong>[TICKET_TIPO]</strong>
+                    </div>
+                    <small class="text-muted">Tipo: simple, completo, con aprobacion | Ticket: incidentes, requerimientos, cambios</small>
+                    
+                    <hr>
+                    
+                    <h6 style="color: #10b981; margin-top: 15px;">📋 LISTAR</h6>
+                    <button type="button" class="btn btn-outline-success btn-sm mb-2" onclick="usarPlantilla('listar [ELEMENTO]')">
+                        📝 Usar Plantilla
+                    </button>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                        listar <strong>[ELEMENTO]</strong>
+                    </div>
+                    <small class="text-muted">Elemento: usuarios, tickets, flujos</small>
+                    
+                    <hr>
+                    
+                    <h6 style="color: #ef4444; margin-top: 15px;">✏️ MODIFICAR TICKET</h6>
+                    <button type="button" class="btn btn-outline-danger btn-sm mb-2" onclick="usarPlantilla('cambiar estado del ticket #[ID] a [ESTADO]')">
+                        📝 Usar Plantilla
+                    </button>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                        cambiar estado del ticket <strong>#[ID]</strong> a <strong>[ESTADO]</strong>
+                    </div>
+                    <small class="text-muted">Estado: Pendiente, Planificado, Solucionado, Cerrado</small>
+                </div>
+            </div>
+            
+            <script>
+            function usarPlantilla(plantilla) {
+                document.getElementById('promptArea').value = plantilla;
+                document.getElementById('promptArea').focus();
+                // Scroll al textarea
+                document.getElementById('promptArea').scrollIntoView({behavior: 'smooth', block: 'center'});
+            }
+            </script>
+            
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-magic"></i> Generar Cambio con IA
+            </button>
+            <a href="{{ url_for('cambios_ia.index') }}" class="btn btn-secondary mt-2">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

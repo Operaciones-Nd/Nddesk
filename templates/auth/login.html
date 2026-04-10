@@ -1,0 +1,292 @@
+{% extends "base_auth.html" %}
+
+{% block title %}NDdesk - Plataforma ITSM{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.login-page {
+    background: url('{{ url_for("static", filename="img/ChatGPT Image Jan 31, 2026, 11_08_46 AM.png") }}') center center / cover no-repeat fixed;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 58, 138, 0.3);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem 0;
+    z-index: 1;
+}
+
+.page-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.page-logo i {
+    font-size: 2.5rem;
+    color: white;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+.page-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+
+.page-subtitle {
+    font-size: 1.125rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.95);
+    margin-top: 0.75rem;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0.3px;
+}
+
+.login-container {
+    max-width: 420px;
+    width: 90%;
+    background: rgba(55, 65, 81, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.login-form-section {
+    padding: 2rem 2rem 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-label i {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+}
+
+.form-input {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+}
+
+.form-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
+    background: white;
+}
+
+.form-input::placeholder {
+    color: #94a3b8;
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    padding: 0.875rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: white;
+    width: 100%;
+    transition: all 0.2s;
+    cursor: pointer;
+    margin-top: 0.75rem;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.login-footer {
+    text-align: center;
+    padding: 1rem 2rem 1.25rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(30, 41, 59, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.login-footer:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.page-footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
+.page-footer-version {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+    .page-subtitle {
+        font-size: 1rem;
+    }
+    .login-container {
+        width: 95%;
+    }
+}
+</style>
+
+<div class="page-header">
+    <div class="page-logo">
+        <img src="{{ url_for('static', filename='img/1000054345.png') }}" alt="NDdesk Logo" style="height: 100px; width: auto; filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.25));">
+        <h1 class="page-title">NDdesk</h1>
+    </div>
+    <p class="page-subtitle">Plataforma ITSM de Nuestro Diario</p>
+</div>
+
+<div class="login-container">
+    <div class="login-form-section">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}" style="border-radius: 8px; margin-bottom: 1.5rem; border: none; background: {{ 'rgba(16, 185, 129, 0.15)' if category == 'success' else 'rgba(239, 68, 68, 0.15)' }}; color: {{ '#10b981' if category == 'success' else '#ef4444' }}; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-{{ 'check-circle' if category == 'success' else 'times-circle' }}"></i>
+                    <span>{{ message }}</span>
+                    <button type="button" class="close" data-dismiss="alert" style="color: inherit; opacity: 0.7; margin-left: auto;">&times;</button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label for="username" class="form-label">
+                    <i class="fas fa-user"></i>
+                    Usuario corporativo
+                </label>
+                <input type="text" 
+                       id="username" 
+                       name="username" 
+                       class="form-input" 
+                       placeholder="nombre.apellido" 
+                       autocomplete="username"
+                       required 
+                       autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    <i class="fas fa-lock"></i>
+                    Contraseña
+                </label>
+                <div class="password-wrapper">
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-input" 
+                           placeholder="••••••••" 
+                           autocomplete="current-password"
+                           required>
+                    <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary">
+                Iniciar sesión
+            </button>
+        </form>
+    </div>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: center; gap: 2rem; margin-top: 2rem; z-index: 1;">
+    <img src="{{ url_for('static', filename='img/logo_nuestro_diario.png') }}" alt="Nuestro Diario" style="height: 55px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));">
+    <img src="{{ url_for('static', filename='img/logo_soy502.png') }}" alt="Soy502" style="height: 50px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));">
+</div>
+
+<div class="page-footer">
+    <div>NDdesk v2.0 © Nuestro Diario</div>
+    <div class="page-footer-version">Uso interno</div>
+</div>
+
+<script>
+const togglePassword = document.getElementById('togglePassword');
+const password = document.getElementById('password');
+
+togglePassword.addEventListener('click', function() {
+    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+    password.setAttribute('type', type);
+    this.classList.toggle('fa-eye');
+    this.classList.toggle('fa-eye-slash');
+});
+</script>
+{% endblock %}

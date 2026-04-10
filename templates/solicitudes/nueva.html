@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Ticket{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('solicitudes.index') }}" class="btn btn-outline-secondary btn-sm mr-3">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <h4 class="mb-0" style="font-weight: 700; color: #1e293b;">Crear Nuevo Ticket</h4>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="ticketForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Información General -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-info-circle mr-2"></i>Información General
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Fecha de Publicación <span class="text-danger">*</span></label>
+                                    <input type="date" name="fecha_publicacion" class="form-control" required min="{{ today }}">
+                                    <small class="form-text text-muted">Fecha en que se publicará el contenido</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Prioridad <span class="text-danger">*</span></label>
+                                    <select name="prioridad" class="form-select" required>
+                                        <option value="Baja">Baja</option>
+                                        <option value="Media" selected>Media</option>
+                                        <option value="Alta">Alta</option>
+                                        <option value="Urgente">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Medio <span class="text-danger">*</span></label>
+                                    <select name="medio" class="form-select" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Nuestro Diario">Nuestro Diario</option>
+                                        <option value="Soy502">Soy502</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {% if user.departamento_id %}
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Departamento</label>
+                                    <input type="text" name="departamento" class="form-control" value="{{ user.departamento_obj.nombre if user.departamento_obj else '' }}" 
+                                           readonly style="background-color: #f8fafc; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Departamento <span class="text-danger">*</span></label>
+                                    <select name="departamento" class="form-select" required>
+                                        <option value="">Seleccionar...</option>
+                                        {% for dept in departamentos %}
+                                        <option value="{{ dept.nombre }}">{{ dept.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Información Editorial -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-newspaper mr-2"></i>Información Editorial
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Sección <span class="text-danger">*</span></label>
+                                    <select name="seccion" id="seccion" class="form-select" required>
+                                        <option value="">Seleccionar...</option>
+                                        {% for sec in secciones %}
+                                        <option value="{{ sec.nombre }}">{{ sec.nombre }} ({{ sec.medio }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="hidden" name="servicio" id="servicio_hidden">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Familia de Servicios <span class="text-danger">*</span></label>
+                                    <select name="familia_servicios" id="familia_servicios" class="form-select" required>
+                                        <option value="">Seleccionar...</option>
+                                        {% for serv in servicios %}
+                                        <option value="{{ serv.nombre }}">{{ serv.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Subcategoría <span class="text-danger">*</span></label>
+                                    <select name="tipo_contenido" id="subcategoria" class="form-select" required disabled>
+                                        <option value="">Primero selecciona Familia de Servicios...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalles del Contenido -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-align-left mr-2"></i>Detalles del Contenido
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Descripción <span class="text-danger">*</span></label>
+                            <textarea name="descripcion" class="form-control" rows="6" 
+                                      placeholder="Describe detalladamente el contenido que necesitas..." 
+                                      required></textarea>
+                            <small class="form-text text-muted">Proporciona todos los detalles necesarios para procesar tu solicitud</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <!-- Asignación -->
+            <div class="card">
+                <div class="card-header" style="background-color: #f8fafc;">
+                    <h5 class="card-title mb-0" style="font-weight: 600; font-size: 0.95rem;">
+                        <i class="fas fa-users-cog mr-2"></i>Asignación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Grupo que Resuelve</label>
+                        <input type="hidden" name="grupo_resuelve" id="grupo_resuelve">
+                        <input type="text" class="form-control" readonly value="" 
+                               style="background-color: #f8fafc; cursor: not-allowed;"
+                               placeholder="Selecciona una sección primero" id="grupo_display">
+                        <small class="form-text text-muted">Se asigna según la sección seleccionada</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email de Notificación <span class="text-danger">*</span></label>
+                        <input type="email" name="email_notificacion" class="form-control" 
+                               placeholder="correo@ejemplo.com" required>
+                        <small class="form-text text-muted">Recibirás actualizaciones aquí</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ayuda -->
+            <div class="info-card">
+                <div style="background-color: #dbeafe; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fas fa-info-circle" style="color: #1e40af; font-size: 1.25rem; margin-top: 0.125rem;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">Información</div>
+                            <div style="font-size: 0.875rem; color: #1e40af;">
+                                El ticket se asignará automáticamente al equipo correspondiente según la sección seleccionada.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-paper-plane mr-2"></i>Crear Ticket
+                </button>
+                <a href="{{ url_for('solicitudes.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#familia_servicios').on('change', function() {
+        const servicioId = $(this).find(':selected').data('id') || $(this).val();
+        const $subcategoria = $('#subcategoria');
+        $subcategoria.html('<option value="">Cargando...</option>').prop('disabled', true);
+        
+        if (servicioId) {
+            // Buscar servicio por nombre
+            $.get('/servicios/por-nombre/' + encodeURIComponent(servicioId), function(data) {
+                if (data.id) {
+                    $.get('/servicios/' + data.id + '/subcategorias', function(subcats) {
+                        $subcategoria.html('<option value="">Seleccionar...</option>');
+                        subcats.forEach(sub => {
+                            $subcategoria.append(`<option value="${sub.nombre}">${sub.nombre}</option>`);
+                        });
+                        $subcategoria.prop('disabled', false);
+                    });
+                }
+            });
+        }
+    });
+    
+    const seccionGrupo = {};
+    
+    $('#seccion').on('change', function() {
+        const seccion = $(this).val();
+        $('#grupo_resuelve').val(seccion);
+        $('#grupo_display').val(seccion);
+        $('#servicio_hidden').val(seccion);
+        
+        // Obtener email de la sección
+        if (seccion) {
+            $.get('/secciones/email/' + encodeURIComponent(seccion), function(data) {
+                if (data.email) {
+                    $('input[name="email_notificacion"]').val(data.email).prop('readonly', true).css('background-color', '#f8fafc');
+                }
+            }).fail(function() {
+                $('input[name="email_notificacion"]').val('').prop('readonly', false).css('background-color', '');
+            });
+        }
+    });
+    
+    $('#ticketForm').on('submit', function(e) {
+        const seccion = $('#seccion').val();
+        const familia = $('#familia_servicios').val();
+        const subcategoria = $('#subcategoria').val();
+        
+        if (!seccion) {
+            e.preventDefault();
+            alert('Por favor selecciona una sección');
+            $('#seccion').focus();
+            return false;
+        }
+        if (!familia) {
+            e.preventDefault();
+            alert('Por favor selecciona una familia de servicios');
+            $('#familia_servicios').focus();
+            return false;
+        }
+        if (!subcategoria) {
+            e.preventDefault();
+            alert('Por favor selecciona una subcategoría');
+            $('#subcategoria').focus();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

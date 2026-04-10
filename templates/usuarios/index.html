@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<style>
+body.dark-mode h4 {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .usuario-row div[style*="font-weight: 600; color: #1e293b"] {
+    color: #e2e8f0 !important;
+}
+</style>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1" style="font-weight: 700; color: #1e293b;">Usuarios</h4>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">{{ usuarios|length }} usuarios registrados</p>
+            </div>
+            {% if session.rol == 'admin' %}
+            <a href="{{ url_for('usuarios.nuevo') }}" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>Nuevo Usuario
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuario...">
+    </div>
+    <div class="col-md-2">
+        <select id="filterRol" class="form-control">
+            <option value="">Todos los roles</option>
+            <option value="admin">Admin</option>
+            <option value="coordinador">Coordinador</option>
+            <option value="resolutor">Resolutor</option>
+            <option value="solicitante">Solicitante</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select id="filterEstado" class="form-control">
+            <option value="">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                <tr>
+                    <th style="padding: 1rem; font-weight: 600; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Usuario</th>
+                    <th style="padding: 1rem; font-weight: 600; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rol</th>
+                    <th style="padding: 1rem; font-weight: 600; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
+                    <th style="padding: 1rem; font-weight: 600; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr class="usuario-row" data-rol="{{ usuario.rol }}" data-estado="{% if usuario.activo %}activo{% else %}inactivo{% endif %}" style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 1rem; vertical-align: middle;">
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #1e40af); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 0.75rem; flex-shrink: 0;">
+                                {{ usuario.nombre[0].upper() }}
+                            </div>
+                            <div style="display: flex; flex-direction: column; justify-content: center;">
+                                <div style="font-weight: 600; color: #1e293b; line-height: 1.4;">{{ usuario.username }}</div>
+                                <div style="font-size: 0.8125rem; color: #94a3b8; line-height: 1.4;">{{ usuario.nombre }}</div>
+                                {% if usuario.departamento_obj %}
+                                <div style="font-size: 0.75rem; color: #cbd5e1; line-height: 1.4;">{{ usuario.departamento_obj.nombre }}</div>
+                                {% endif %}
+                                {% if usuario.secciones %}
+                                <div style="margin-top: 0.25rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                    {% for sec in usuario.secciones[:3] %}
+                                    <span style="background: #eff6ff; color: #3b82f6; padding: 0.125rem 0.5rem; font-size: 0.6875rem; border-radius: 3px;">{{ sec.nombre }}</span>
+                                    {% endfor %}
+                                    {% if usuario.secciones|length > 3 %}
+                                    <span style="background: #f1f5f9; color: #64748b; padding: 0.125rem 0.5rem; font-size: 0.6875rem; border-radius: 3px;">+{{ usuario.secciones|length - 3 }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                        {% if usuario.rol == 'admin' %}
+                        <span style="background: #fef2f2; color: #dc2626; padding: 0.375rem 0.75rem; font-weight: 500; font-size: 0.8125rem; border-radius: 6px; display: inline-block;">
+                            Admin
+                        </span>
+                        {% elif usuario.rol == 'coordinador' %}
+                        <span style="background: #eff6ff; color: #3b82f6; padding: 0.375rem 0.75rem; font-weight: 500; font-size: 0.8125rem; border-radius: 6px; display: inline-block;">
+                            Coordinador
+                        </span>
+                        {% elif usuario.rol == 'resolutor' %}
+                        <span style="background: #d1fae5; color: #059669; padding: 0.375rem 0.75rem; font-weight: 500; font-size: 0.8125rem; border-radius: 6px; display: inline-block;">
+                            Resolutor
+                        </span>
+                        {% else %}
+                        <span style="background: #f1f5f9; color: #64748b; padding: 0.375rem 0.75rem; font-weight: 500; font-size: 0.8125rem; border-radius: 6px; display: inline-block;">
+                            Solicitante
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                        {% if usuario.activo %}
+                        <span style="color: #10b981; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center;">
+                            <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.375rem;"></i>Activo
+                        </span>
+                        {% else %}
+                        <span style="color: #ef4444; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center;">
+                            <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.375rem;"></i>Inactivo
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle; text-align: right;">
+                        {% if session.rol == 'admin' %}
+                        <a href="{{ url_for('usuarios.editar', id=usuario.id) }}" class="btn btn-sm btn-light" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('usuarios.eliminar', id=usuario.id) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-light" title="Eliminar" onclick="return confirm('¿Eliminar {{ usuario.username }}?')">
+                                <i class="fas fa-trash-alt text-danger"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$('#searchInput, #filterRol, #filterEstado').on('keyup change', function() {
+    const search = $('#searchInput').val().toLowerCase();
+    const rol = $('#filterRol').val();
+    const estado = $('#filterEstado').val();
+    
+    $('.usuario-row').each(function() {
+        const $row = $(this);
+        const text = $row.text().toLowerCase();
+        const rowRol = $row.data('rol');
+        const rowEstado = $row.data('estado');
+        
+        const matchSearch = !search || text.includes(search);
+        const matchRol = !rol || rowRol === rol;
+        const matchEstado = !estado || rowEstado === estado;
+        
+        $row.toggle(matchSearch && matchRol && matchEstado);
+    });
+});
+</script>
+<style>
+.dataTables_info,
+.dataTables_length {
+    display: none !important;
+}
+</style>
+{% endblock %}

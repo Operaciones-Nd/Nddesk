@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Informe Semanal de Cumplimiento Editorial</title>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='img/logo.png', _external=True) }}" class="logo" alt="Logo">
+        <h1>Informe Semanal de Cumplimiento Editorial</h1>
+        <p style="font-size: 12pt; color: #64748b;">
+            Semana del {{ datos.fecha_inicio.strftime('%d/%m/%Y') }} al {{ datos.fecha_fin.strftime('%d/%m/%Y') }}
+        </p>
+    </div>
+
+    <!-- Resumen Ejecutivo -->
+    <h2>1. Resumen Ejecutivo</h2>
+    <div class="resumen">
+        {{ resumen }}
+    </div>
+
+    <!-- Métricas Principales -->
+    <h2>2. Métricas de Cumplimiento</h2>
+    <div class="metricas">
+        <div class="metrica-box">
+            <div class="metrica-numero">{{ datos.total }}</div>
+            <div class="metrica-label">Total Solicitudes</div>
+        </div>
+        <div class="metrica-box">
+            <div class="metrica-numero" style="color: #10b981;">{{ datos.a_tiempo }}</div>
+            <div class="metrica-label">A Tiempo</div>
+        </div>
+        <div class="metrica-box">
+            <div class="metrica-numero" style="color: #ef4444;">{{ datos.fuera_fecha }}</div>
+            <div class="metrica-label">Fuera de Fecha</div>
+        </div>
+        <div class="metrica-box">
+            <div class="metrica-numero">{{ datos.porcentaje_cumplimiento }}%</div>
+            <div class="metrica-label">Cumplimiento</div>
+        </div>
+    </div>
+
+    <!-- Tabla de Solicitudes -->
+    <h2>3. Detalle de Solicitudes Recibidas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Departamento</th>
+                <th>Sección</th>
+                <th>Descripción</th>
+                <th>Fecha Solicitada</th>
+                <th>Fecha Real</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sol in datos.solicitudes %}
+            <tr>
+                <td>#{{ sol.id }}</td>
+                <td>{{ sol.departamento }}</td>
+                <td>{{ sol.seccion }}</td>
+                <td>{{ sol.descripcion[:50] }}...</td>
+                <td>{{ sol.fecha_solicitada_publicacion.strftime('%d/%m/%Y') if sol.fecha_solicitada_publicacion else '-' }}</td>
+                <td>{{ sol.fecha_real_publicacion.strftime('%d/%m/%Y') if sol.fecha_real_publicacion else '-' }}</td>
+                <td>
+                    {% if sol.publicado and sol.fecha_real_publicacion and sol.fecha_solicitada_publicacion %}
+                        {% if sol.fecha_real_publicacion <= sol.fecha_solicitada_publicacion %}
+                        <span class="badge badge-success">A tiempo</span>
+                        {% else %}
+                        <span class="badge badge-danger">Fuera de fecha</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="badge badge-warning">Pendiente</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Cumplimiento por Sección -->
+    <h2>4. Cumplimiento por Sección Editorial</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Sección</th>
+                <th>Total</th>
+                <th>A Tiempo</th>
+                <th>Fuera de Fecha</th>
+                <th>% Cumplimiento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for seccion, metricas in datos.por_seccion.items() %}
+            <tr>
+                <td><strong>{{ seccion }}</strong></td>
+                <td>{{ metricas.total }}</td>
+                <td>{{ metricas.a_tiempo }}</td>
+                <td>{{ metricas.fuera_fecha }}</td>
+                <td>{{ "%.1f"|format((metricas.a_tiempo / metricas.total * 100) if metricas.total > 0 else 0) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Casos Fuera de Fecha -->
+    {% if datos.casos_retraso %}
+    <h2>5. Casos Fuera de Fecha - Análisis</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sección</th>
+                <th>Descripción</th>
+                <th>Días de Retraso</th>
+                <th>Motivo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sol in datos.casos_retraso %}
+            <tr>
+                <td>#{{ sol.id }}</td>
+                <td>{{ sol.seccion }}</td>
+                <td>{{ sol.descripcion[:40] }}...</td>
+                <td>{{ (sol.fecha_real_publicacion - sol.fecha_solicitada_publicacion).days }}</td>
+                <td>{{ sol.motivo_retraso or 'No especificado' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Actividad por Responsable -->
+    <h2>6. Actividad por Responsable Editorial</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Responsable</th>
+                <th>Total Asignado</th>
+                <th>A Tiempo</th>
+                <th>Fuera de Fecha</th>
+                <th>% Cumplimiento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for nombre, metricas in datos.por_responsable.items() %}
+            <tr>
+                <td><strong>{{ nombre }}</strong></td>
+                <td>{{ metricas.total }}</td>
+                <td>{{ metricas.a_tiempo }}</td>
+                <td>{{ metricas.fuera_fecha }}</td>
+                <td>{{ "%.1f"|format((metricas.a_tiempo / metricas.total * 100) if metricas.total > 0 else 0) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Conclusiones -->
+    <h2>7. Conclusiones y Recomendaciones</h2>
+    <div class="resumen">
+        <ul style="margin: 0; padding-left: 20px;">
+            {% if datos.porcentaje_cumplimiento >= 90 %}
+            <li>El equipo editorial mantiene un excelente nivel de cumplimiento.</li>
+            <li>Se recomienda mantener las prácticas actuales de planificación.</li>
+            {% elif datos.porcentaje_cumplimiento >= 75 %}
+            <li>El cumplimiento es satisfactorio, pero hay margen de mejora.</li>
+            <li>Revisar los casos de retraso para identificar patrones.</li>
+            {% else %}
+            <li>Se requiere atención urgente a los procesos de planificación.</li>
+            <li>Considerar reunión de coordinación para analizar cuellos de botella.</li>
+            <li>Evaluar redistribución de carga de trabajo entre secciones.</li>
+            {% endif %}
+            
+            {% if datos.casos_retraso|length > 5 %}
+            <li>Alto número de casos fuera de fecha ({{ datos.casos_retraso|length }}). Se recomienda análisis detallado.</li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <div class="firma">
+        <p>Generado automáticamente por NDdesk</p>
+        <p>{{ fecha_generacion.strftime('%d de %B de %Y a las %H:%M hrs') }}</p>
+    </div>
+
+    <div class="footer">
+        <p><strong>Nuestro Diario</strong> - Sistema de Gestión Editorial</p>
+        <p>Este documento es confidencial y de uso interno</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,696 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0;">
+        <li class="breadcrumb-item"><a href="{{ url_for('solicitudes.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Estadísticas</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0" style="font-weight: 700; color: #1e293b;">
+        <i class="fas fa-chart-line text-primary"></i> Estadísticas y Gráficas
+    </h4>
+    <div>
+        <div class="dropdown d-inline me-2">
+            <button class="btn btn-success btn-sm dropdown-toggle" type="button" id="dropdownExportar" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#" id="btnExportarPDF"><i class="fas fa-file-pdf text-danger"></i> PDF Completo</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item export-section-img" href="#" data-section="metricas"><i class="fas fa-chart-bar text-primary"></i> Métricas</a>
+                <a class="dropdown-item export-section-img" href="#" data-section="graficas-principales"><i class="fas fa-chart-pie text-success"></i> Gráficas Principales</a>
+                <a class="dropdown-item export-section-img" href="#" data-section="graficas-secundarias"><i class="fas fa-chart-line text-info"></i> Tendencias</a>
+                <a class="dropdown-item export-section-img" href="#" data-section="estadisticas-adicionales"><i class="fas fa-clock text-warning"></i> Estadísticas</a>
+                <a class="dropdown-item export-section-img" href="#" data-section="informacion-detallada"><i class="fas fa-list text-secondary"></i> Información Detallada</a>
+            </div>
+        </div>
+        <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Actualizar">
+            <i class="fas fa-sync-alt"></i> Actualizar
+        </button>
+    </div>
+</div>
+
+<!-- Tarjetas de métricas resumen -->
+<div class="row mb-4" id="metricas">
+    <div class="col-md-2">
+        <div class="card" style="border-left: 4px solid #f59e0b;">
+            <div class="card-body p-3">
+                <div class="text-muted" style="font-size: 0.75rem;">PENDIENTES</div>
+                <h3 class="mb-0" style="font-weight: 700;">{{ metricas.pendientes }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card" style="border-left: 4px solid #3b82f6;">
+            <div class="card-body p-3">
+                <div class="text-muted" style="font-size: 0.75rem;">PLANIFICADOS</div>
+                <h3 class="mb-0" style="font-weight: 700;">{{ metricas.planificados }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card" style="border-left: 4px solid #10b981;">
+            <div class="card-body p-3">
+                <div class="text-muted" style="font-size: 0.75rem;">SOLUCIONADOS</div>
+                <h3 class="mb-0" style="font-weight: 700;">{{ metricas.solucionados }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card" style="border-left: 4px solid #6b7280;">
+            <div class="card-body p-3">
+                <div class="text-muted" style="font-size: 0.75rem;">CERRADOS</div>
+                <h3 class="mb-0" style="font-weight: 700;">{{ metricas.cerrados }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card" style="border-left: 4px solid #ef4444;">
+            <div class="card-body p-3">
+                <div class="text-muted" style="font-size: 0.75rem;">SLA VENCIDO</div>
+                <h3 class="mb-0" style="font-weight: 700;">{{ metricas.sla_vencido }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card" style="border-left: 4px solid #8b5cf6;">
+            <div class="card-body p-3">
+                <div class="text-muted" style="font-size: 0.75rem;">ESCALADOS</div>
+                <h3 class="mb-0" style="font-weight: 700;">{{ metricas.escalados }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficas principales -->
+<div class="row mb-4" id="graficas-principales">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-chart-bar text-primary"></i> Tickets por Estado
+                </h6>
+            </div>
+            <div class="card-body chart-container">
+                <!-- Vista Desktop: Gráfico -->
+                <canvas id="chartEstados" class="d-none d-md-block" height="120"></canvas>
+                
+                <!-- Vista Móvil: Barras compactas -->
+                <div class="mobile-stats d-md-none">
+                    <div class="mobile-stat-item" style="border-left-color: #f59e0b;">
+                        <div class="mobile-stat-info">
+                            <div class="mobile-stat-label">Pendientes</div>
+                            <div class="mobile-stat-value">{{ metricas.pendientes }}</div>
+                        </div>
+                        <div class="mobile-stat-bar">
+                            <div class="mobile-stat-fill" style="width: {{ (metricas.pendientes / (metricas.pendientes + metricas.planificados + metricas.solucionados + metricas.cerrados + metricas.escalados) * 100)|round }}%; background: #f59e0b;"></div>
+                        </div>
+                    </div>
+                    <div class="mobile-stat-item" style="border-left-color: #3b82f6;">
+                        <div class="mobile-stat-info">
+                            <div class="mobile-stat-label">Planificados</div>
+                            <div class="mobile-stat-value">{{ metricas.planificados }}</div>
+                        </div>
+                        <div class="mobile-stat-bar">
+                            <div class="mobile-stat-fill" style="width: {{ (metricas.planificados / (metricas.pendientes + metricas.planificados + metricas.solucionados + metricas.cerrados + metricas.escalados) * 100)|round }}%; background: #3b82f6;"></div>
+                        </div>
+                    </div>
+                    <div class="mobile-stat-item" style="border-left-color: #10b981;">
+                        <div class="mobile-stat-info">
+                            <div class="mobile-stat-label">Solucionados</div>
+                            <div class="mobile-stat-value">{{ metricas.solucionados }}</div>
+                        </div>
+                        <div class="mobile-stat-bar">
+                            <div class="mobile-stat-fill" style="width: {{ (metricas.solucionados / (metricas.pendientes + metricas.planificados + metricas.solucionados + metricas.cerrados + metricas.escalados) * 100)|round }}%; background: #10b981;"></div>
+                        </div>
+                    </div>
+                    <div class="mobile-stat-item" style="border-left-color: #6b7280;">
+                        <div class="mobile-stat-info">
+                            <div class="mobile-stat-label">Cerrados</div>
+                            <div class="mobile-stat-value">{{ metricas.cerrados }}</div>
+                        </div>
+                        <div class="mobile-stat-bar">
+                            <div class="mobile-stat-fill" style="width: {{ (metricas.cerrados / (metricas.pendientes + metricas.planificados + metricas.solucionados + metricas.cerrados + metricas.escalados) * 100)|round }}%; background: #6b7280;"></div>
+                        </div>
+                    </div>
+                    <div class="mobile-stat-item" style="border-left-color: #8b5cf6;">
+                        <div class="mobile-stat-info">
+                            <div class="mobile-stat-label">Escalados</div>
+                            <div class="mobile-stat-value">{{ metricas.escalados }}</div>
+                        </div>
+                        <div class="mobile-stat-bar">
+                            <div class="mobile-stat-fill" style="width: {{ (metricas.escalados / (metricas.pendientes + metricas.planificados + metricas.solucionados + metricas.cerrados + metricas.escalados) * 100)|round }}%; background: #8b5cf6;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-chart-pie text-success"></i> Familia de Servicios
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="chartDistribucion" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficas secundarias -->
+<div class="row mb-4" id="graficas-secundarias">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-chart-line text-info"></i> Tendencia Últimos 7 Días
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="chartTendencia" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-chart-area text-warning"></i> Tickets por Prioridad
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="chartPrioridad" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas adicionales -->
+<div class="row mb-4" id="estadisticas-adicionales">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-clock text-primary"></i> Tiempo Promedio
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="mb-2" style="font-weight: 700; color: #1e3a8a;">{{ stats.tiempo_promedio }}h</h2>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">Horas de resolución</p>
+                <small class="text-muted">{{ stats.tickets_resueltos }} tickets resueltos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-percentage text-success"></i> Tasa de Resolución
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="mb-2" style="font-weight: 700; color: #10b981;">{{ stats.tasa_resolucion }}%</h2>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">Tickets resueltos</p>
+                <small class="text-muted">{{ stats.tickets_resueltos }}/{{ stats.total_tickets }} tickets</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-star text-warning"></i> Satisfacción
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="mb-2" style="font-weight: 700; color: #f59e0b;">{{ stats.satisfaccion }}/5</h2>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">Calificación promedio</p>
+                <div class="mt-2">
+                    {% for i in range(1, 6) %}
+                        {% if i <= stats.satisfaccion|int %}
+                            <i class="fas fa-star text-warning"></i>
+                        {% else %}
+                            <i class="far fa-star text-warning"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-ticket-alt text-info"></i> Total Tickets
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="mb-2" style="font-weight: 700; color: #3b82f6;">{{ stats.total_tickets }}</h2>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">Tickets en el sistema</p>
+                <small class="text-muted">{{ metricas.pendientes + metricas.planificados }} activos</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información detallada -->
+<div class="row" id="informacion-detallada">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center" style="padding: 2rem;">
+                <div style="width: 80px; height: 80px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-layer-group" style="font-size: 2rem; color: white;"></i>
+                </div>
+                <h5 style="font-weight: 700; margin-bottom: 0.5rem;">Tickets por Sección</h5>
+                <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 1.5rem;">Distribución de tickets por sección</p>
+                <div style="height: 200px; overflow-y: auto; text-align: left;">
+                    {% for seccion, count in stats.tickets_por_seccion.items() %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size: 0.875rem;">{{ seccion or 'Sin sección' }}</span>
+                        <span class="badge badge-primary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center" style="padding: 2rem;">
+                <div style="width: 80px; height: 80px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-building" style="font-size: 2rem; color: white;"></i>
+                </div>
+                <h5 style="font-weight: 700; margin-bottom: 0.5rem;">Tickets por Departamento</h5>
+                <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 1.5rem;">Distribución de tickets por departamento</p>
+                <div style="height: 200px; overflow-y: auto; text-align: left;">
+                    {% for depto, count in stats.tickets_por_departamento.items() %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size: 0.875rem;">{{ depto or 'Sin departamento' }}</span>
+                        <span class="badge badge-success">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center" style="padding: 2rem;">
+                <div style="width: 80px; height: 80px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-trophy" style="font-size: 2rem; color: white;"></i>
+                </div>
+                <h5 style="font-weight: 700; margin-bottom: 0.5rem;">Top Resolutores</h5>
+                <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 1.5rem;">Usuarios con más tickets resueltos</p>
+                <div style="height: 200px; overflow-y: auto; text-align: left;">
+                    {% for resolutor in stats.top_resolutores %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size: 0.875rem;">
+                            <i class="fas fa-user-circle text-muted"></i> {{ resolutor[0] }}
+                        </span>
+                        <span class="badge badge-warning">{{ resolutor[1] }} tickets</span>
+                    </div>
+                    {% endfor %}
+                    {% if not stats.top_resolutores %}
+                    <p class="text-muted text-center mb-0">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Mobile Stats - Estilo SaaS moderno */
+.mobile-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mobile-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border-left: 3px solid;
+}
+
+.mobile-stat-info {
+    min-width: 110px;
+    flex-shrink: 0;
+}
+
+.mobile-stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.125rem;
+}
+
+.mobile-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.mobile-stat-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.mobile-stat-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.chart-container {
+    padding: 1rem;
+}
+
+@media (max-width: 767px) {
+    .chart-container {
+        padding: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    .row.mb-4 {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .col-md-8, .col-md-4, .col-md-6, .col-md-3 {
+        margin-bottom: 0.75rem;
+    }
+}
+</style>
+<script>
+Chart.register(ChartDataLabels);
+
+// Exportar como PDF
+$('#btnExportarPDF').on('click', function(e) {
+    e.preventDefault();
+    var btn = $(this);
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Generando PDF...');
+    
+    $('.dropdown').hide();
+    $('#btnRefresh').hide();
+    
+    setTimeout(function() {
+        html2canvas(document.querySelector('.content-wrapper'), {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false
+        }).then(canvas => {
+            $('.dropdown').show();
+            $('#btnRefresh').show();
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 210;
+            const pageHeight = 297;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+            
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save('estadisticas_' + new Date().getTime() + '.pdf');
+            btn.html('<i class="fas fa-file-pdf"></i> PDF Completo');
+        });
+    }, 100);
+});
+
+// Exportar sección como imagen
+$('.export-section-img').on('click', function(e) {
+    e.preventDefault();
+    var section = $(this).data('section');
+    var element = document.getElementById(section);
+    
+    if (!element) return;
+    
+    html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false
+    }).then(canvas => {
+        var link = document.createElement('a');
+        link.download = section + '_' + new Date().getTime() + '.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+});
+// Gráfica de barras - Estados
+var ctxEstados = document.getElementById('chartEstados').getContext('2d');
+var chartEstados = new Chart(ctxEstados, {
+    type: 'bar',
+    data: {
+        labels: ['Pendientes', 'Planificados', 'Solucionados', 'Cerrados', 'Escalados'],
+        datasets: [{
+            label: 'Tickets',
+            data: [
+                {{ metricas.pendientes }},
+                {{ metricas.planificados }},
+                {{ metricas.solucionados }},
+                {{ metricas.cerrados }},
+                {{ metricas.escalados }}
+            ],
+            backgroundColor: [
+                '#f59e0b',
+                '#3b82f6',
+                '#10b981',
+                '#6b7280',
+                '#8b5cf6'
+            ],
+            borderRadius: 8,
+            barPercentage: 0.9,
+            categoryPercentage: 0.8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        layout: { padding: { top: 40, bottom: 10, left: 5, right: 5 } },
+        plugins: {
+            legend: { display: false },
+            tooltip: { 
+                enabled: true,
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: 12,
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                cornerRadius: 6
+            },
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                color: '#1e293b',
+                font: { weight: 'bold', size: 16 },
+                formatter: (value) => value,
+                offset: 8
+            }
+        },
+        scales: {
+            y: { display: false },
+            x: { 
+                grid: { display: false, drawBorder: false },
+                ticks: { font: { size: 12, weight: '500' }, color: '#475569' },
+                border: { display: false }
+            }
+        }
+    }
+});
+
+// Gráfica de dona - Distribución
+var ctxDistribucion = document.getElementById('chartDistribucion').getContext('2d');
+var chartDistribucion = new Chart(ctxDistribucion, {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys({{ stats.por_servicio|tojson }}),
+        datasets: [{
+            data: Object.values({{ stats.por_servicio|tojson }}),
+            backgroundColor: [
+                '#3b82f6',
+                '#10b981',
+                '#f59e0b'
+            ],
+            borderWidth: 0,
+            spacing: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '60%',
+        layout: { padding: 20 },
+        plugins: {
+            legend: { 
+                position: 'bottom',
+                labels: { 
+                    padding: 12, 
+                    font: { size: 12, weight: '500' }, 
+                    color: '#475569',
+                    boxWidth: 14,
+                    boxHeight: 14,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            tooltip: { 
+                enabled: true,
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: 12,
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                cornerRadius: 6
+            },
+            datalabels: {
+                color: '#fff',
+                font: { weight: 'bold', size: 18 },
+                formatter: (value) => value > 0 ? value : '',
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowBlur: 3
+            }
+        }
+    }
+});
+
+// Gráfica de línea - Tendencia
+var ctxTendencia = document.getElementById('chartTendencia').getContext('2d');
+var chartTendencia = new Chart(ctxTendencia, {
+    type: 'line',
+    data: {
+        labels: {{ stats.labels_7dias|tojson }},
+        datasets: [{
+            label: 'Tickets Creados',
+            data: {{ stats.tendencia_7dias|tojson }},
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 3.5,
+            pointRadius: 6,
+            pointBackgroundColor: 'rgb(16, 185, 129)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 3,
+            pointHoverRadius: 7,
+            barPercentage: 0.9,
+            categoryPercentage: 0.8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        layout: { padding: { top: 35, bottom: 5, left: 5, right: 5 } },
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                color: '#1e293b',
+                font: { weight: 'bold', size: 13 },
+                formatter: (value) => Math.round(value),
+                offset: 6
+            }
+        },
+        scales: {
+            y: { display: false },
+            x: { 
+                grid: { display: false, drawBorder: false },
+                ticks: { font: { size: 11, weight: '600' }, color: '#475569' },
+                border: { display: false }
+            }
+        }
+    }
+});
+
+// Gráfica de barras horizontales - Prioridad
+var ctxPrioridad = document.getElementById('chartPrioridad').getContext('2d');
+var chartPrioridad = new Chart(ctxPrioridad, {
+    type: 'bar',
+    data: {
+        labels: ['Alta', 'Media', 'Baja'],
+        datasets: [{
+            label: 'Tickets',
+            data: [{{ stats.prioridad_alta }}, {{ stats.prioridad_media }}, {{ stats.prioridad_baja }}],
+            backgroundColor: [
+                'rgba(239, 68, 68, 0.85)',
+                'rgba(245, 158, 11, 0.85)',
+                'rgba(107, 114, 128, 0.85)'
+            ],
+            borderRadius: 6,
+            barPercentage: 0.9,
+            categoryPercentage: 0.8
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: true,
+        layout: { padding: { right: 55, left: 5, top: 5, bottom: 5 } },
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+            datalabels: {
+                anchor: 'end',
+                align: 'right',
+                color: '#1e293b',
+                font: { weight: 'bold', size: 15 },
+                formatter: (value) => Math.round(value),
+                offset: 10
+            }
+        },
+        scales: {
+            x: { display: false },
+            y: { 
+                grid: { display: false, drawBorder: false },
+                ticks: { font: { size: 12, weight: '600' }, color: '#475569' },
+                border: { display: false }
+            }
+        }
+    }
+});
+
+// Refresh
+$('#btnRefresh').on('click', function() {
+    var btn = $(this);
+    btn.find('i').addClass('fa-spin');
+    setTimeout(function() {
+        location.reload();
+    }, 500);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Usuario{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Nuevo Usuario</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre Completo</label>
+                    <input type="text" name="nombre" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Rol</label>
+                    <select name="rol" id="rol" class="form-select" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="admin">Administrador</option>
+                        <option value="coordinador">Coordinador</option>
+                        <option value="resolutor">Resolutor</option>
+                        <option value="solicitante">Solicitante</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3" id="departamento-container" style="display: none;">
+                    <label class="form-label">Departamento (Solicitantes)</label>
+                    <select name="departamento_id" id="departamento_id" class="form-select">
+                        <option value="">Seleccionar...</option>
+                        {% for dept in departamentos %}
+                        <option value="{{ dept.id }}">{{ dept.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3" id="secciones-container" style="display: none;">
+                    <label class="form-label">Secciones (Resolutores) - Múltiples</label>
+                    <select name="secciones_ids" id="secciones_ids" class="form-select" multiple size="8">
+                        {% for sec in secciones %}
+                        <option value="{{ sec.id }}">{{ sec.nombre }} ({{ sec.medio }})</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar múltiples</small>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Crear Usuario</button>
+            <a href="{{ url_for('usuarios.index') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$('#rol').on('change', function() {
+    const rol = $(this).val();
+    if (rol === 'resolutor') {
+        $('#secciones-container').show();
+        $('#departamento-container').hide();
+    } else if (rol === 'solicitante') {
+        $('#departamento-container').show();
+        $('#secciones-container').hide();
+    } else {
+        $('#secciones-container').hide();
+        $('#departamento-container').hide();
+    }
+});
+</script>
+{% endblock %}

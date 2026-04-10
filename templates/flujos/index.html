@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Flujos de Trabajo{% endblock %}
+{% block content %}
+<style>
+.flow-card { border-left: 4px solid #667eea; transition: all 0.3s; }
+.flow-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+.transition-item { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 8px; border-left: 3px solid #3b82f6; }
+.flow-diagram { display: flex; align-items: center; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+.flow-state { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 20px; font-weight: 600; }
+.flow-arrow { color: #667eea; font-size: 24px; }
+.role-card { text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.3s; background: white; border: 1px solid #e5e7eb; }
+.role-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.role-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.75rem; color: white; }
+.role-title { font-weight: 600; font-size: 0.875rem; color: #1e293b; margin-bottom: 0; }
+</style>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h4 style="font-weight: 700; color: #1e293b;"><i class="fas fa-project-diagram"></i> Flujos de Trabajo</h4>
+        <p class="text-muted">Define cómo se mueven los tickets entre estados</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('flujo.nuevo') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Flujo</a>
+    </div>
+</div>
+
+{% if flujos|length == 0 %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> No hay flujos configurados. Crea tu primer flujo para controlar el ciclo de vida de los tickets.
+</div>
+{% endif %}
+
+<div class="row">
+    {% for flujo in flujos %}
+    <div class="col-md-12 mb-4">
+        <div class="card flow-card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0"><i class="fas fa-sitemap"></i> {{ flujo.nombre }}</h5>
+                        <small>{{ flujo.descripcion }}</small>
+                    </div>
+                    <div>
+                        <span class="badge" style="background: {{ '#10b981' if flujo.activo else '#6b7280' }}; font-size: 14px;">
+                            <i class="fas fa-{{ 'check-circle' if flujo.activo else 'times-circle' }}"></i> {{ 'Activo' if flujo.activo else 'Inactivo' }}
+                        </span>
+                        <span class="badge bg-light text-dark" style="font-size: 14px; margin-left: 5px;">
+                            <i class="fas fa-tag"></i> {{ flujo.tipo_ticket }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 style="color: #667eea; font-weight: 600;"><i class="fas fa-route"></i> Diagrama de Flujo:</h6>
+                <div class="flow-diagram">
+                    <div class="flow-state" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">1. Pendiente</div>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <div class="flow-state" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">2. Planificado</div>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <div class="flow-state" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">3. Solucionado</div>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <div class="flow-state" style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);">4. Cerrado</div>
+                    <i class="fas fa-redo flow-arrow" style="color: #f59e0b;" title="Puede reabrirse"></i>
+                    <div class="flow-state" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">↻ Reabierto</div>
+                </div>
+                
+                <hr>
+                
+                <h6 style="color: #667eea; font-weight: 600;"><i class="fas fa-exchange-alt"></i> Transiciones ({{ flujo.transiciones|length }}):</h6>
+                {% for trans in flujo.transiciones %}
+                <div class="transition-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong style="color: #1e293b;">{{ trans.nombre }}</strong>
+                            <div class="text-muted" style="font-size: 13px;">
+                                <i class="fas fa-arrow-right"></i> {{ trans.estado_origen }} → {{ trans.estado_destino }}
+                            </div>
+                        </div>
+                        <div>
+                            {% if trans.requiere_comentario %}
+                            <span class="badge bg-info" title="Requiere comentario">
+                                <i class="fas fa-comment"></i> Comentario
+                            </span>
+                            {% endif %}
+                            {% if trans.requiere_adjunto %}
+                            <span class="badge bg-warning" title="Requiere adjunto">
+                                <i class="fas fa-paperclip"></i> Adjunto
+                            </span>
+                            {% endif %}
+                            {% if trans.roles_permitidos %}
+                            <span class="badge bg-secondary" title="Roles: {{ trans.roles_permitidos }}">
+                                <i class="fas fa-user-shield"></i> {{ trans.roles_permitidos.split(',')[0] }}{% if trans.roles_permitidos.split(',')|length > 1 %} +{{ trans.roles_permitidos.split(',')|length - 1 }}{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('flujo.editar', id=flujo.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Editar Flujo
+                    </a>
+                    <button class="btn btn-{{ 'secondary' if flujo.activo else 'success' }} btn-sm" onclick="toggleFlujo({{ flujo.id }}, {{ 'true' if flujo.activo else 'false' }})">
+                        <i class="fas fa-power-off"></i> {{ 'Desactivar' if flujo.activo else 'Activar' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card" style="border-left: 4px solid #f59e0b;">
+    <div class="card-header" style="background: #fef3c7;">
+        <h5 class="mb-0" style="color: #92400e;"><i class="fas fa-cogs"></i> Reglas de Automatización</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Crea reglas automáticas que se ejecutan cuando se cumplen condiciones específicas.</p>
+        <a href="{{ url_for('flujo.reglas') }}" class="btn btn-warning">
+            <i class="fas fa-robot"></i> Gestionar Reglas
+        </a>
+    </div>
+</div>
+
+<script>
+function toggleFlujo(id, activo) {
+    const accion = activo ? 'desactivar' : 'activar';
+    if(confirm(`¿Seguro que quieres ${accion} este flujo?`)) {
+        fetch(`/flujos/${id}/toggle`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

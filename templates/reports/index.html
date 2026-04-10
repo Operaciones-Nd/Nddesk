@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Reportes Semanales{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0" style="font-weight: 700;">
+                <i class="fas fa-file-pdf mr-2"></i>Informes Semanales de Cumplimiento
+            </h4>
+            <form method="POST" action="{{ url_for('reports.generate') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Generar Nuevo Informe
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Semana</th>
+                    <th>Total Solicitudes</th>
+                    <th>A Tiempo</th>
+                    <th>Fuera de Fecha</th>
+                    <th>% Cumplimiento</th>
+                    <th>Generado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reporte in reportes %}
+                <tr>
+                    <td>
+                        <strong>{{ reporte.semana_inicio.strftime('%d/%m/%Y') }}</strong> - 
+                        {{ reporte.semana_fin.strftime('%d/%m/%Y') }}
+                    </td>
+                    <td>{{ reporte.total_solicitudes }}</td>
+                    <td><span class="badge badge-success">{{ reporte.cumplidas_tiempo }}</span></td>
+                    <td><span class="badge badge-danger">{{ reporte.fuera_fecha }}</span></td>
+                    <td>
+                        <strong style="color: {% if reporte.porcentaje_cumplimiento >= 90 %}#10b981{% elif reporte.porcentaje_cumplimiento >= 75 %}#f59e0b{% else %}#ef4444{% endif %}">
+                            {{ reporte.porcentaje_cumplimiento }}%
+                        </strong>
+                    </td>
+                    <td>{{ reporte.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('reports.download', id=reporte.id) }}" class="btn btn-sm btn-primary" title="Descargar PDF">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

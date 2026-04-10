@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Tickets{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0;">
+        <li class="breadcrumb-item"><a href="{{ url_for('solicitudes.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Mis Tickets</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0" style="font-weight: 700; color: #1e293b;">Dashboard de Tickets</h4>
+    <div>
+        <button id="btnRefresh" class="btn btn-outline-secondary btn-sm me-2" title="Actualizar">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        {% if session.rol in ['admin', 'coordinador'] %}
+        <a href="{{ url_for('solicitudes.reportes') }}" class="btn btn-outline-primary btn-sm me-2">
+            <i class="fas fa-file-excel"></i> Exportar
+        </a>
+        {% endif %}
+        <a href="{{ url_for('solicitudes.nueva') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Nuevo Ticket
+        </a>
+    </div>
+</div>
+
+<!-- Tarjetas de métricas -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card metric-card" data-filter="Pendiente" style="border-left: 4px solid #f59e0b; cursor: pointer;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">PENDIENTES</div>
+                        <h3 class="mb-0" style="font-weight: 700;">{{ metricas.pendientes }}</h3>
+                    </div>
+                    <i class="fas fa-clock" style="font-size: 2rem; color: #f59e0b; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card metric-card" data-filter="Planificado" style="border-left: 4px solid #3b82f6; cursor: pointer;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">PLANIFICADOS</div>
+                        <h3 class="mb-0" style="font-weight: 700;">{{ metricas.planificados }}</h3>
+                    </div>
+                    <i class="fas fa-calendar" style="font-size: 2rem; color: #3b82f6; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card metric-card" data-filter="Solucionado" style="border-left: 4px solid #10b981; cursor: pointer;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">SOLUCIONADOS</div>
+                        <h3 class="mb-0" style="font-weight: 700;">{{ metricas.solucionados }}</h3>
+                    </div>
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #10b981; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card metric-card" data-filter="Cerrado" style="border-left: 4px solid #6b7280; cursor: pointer;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">CERRADOS</div>
+                        <h3 class="mb-0" style="font-weight: 700;">{{ metricas.cerrados }}</h3>
+                    </div>
+                    <i class="fas fa-lock" style="font-size: 2rem; color: #6b7280; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card metric-card" data-filter="sla_vencido" style="border-left: 4px solid #ef4444; cursor: pointer;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">SLA VENCIDO</div>
+                        <h3 class="mb-0" style="font-weight: 700;">{{ metricas.sla_vencido }}</h3>
+                    </div>
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ef4444; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card metric-card" data-filter="Escalado" style="border-left: 4px solid #8b5cf6; cursor: pointer;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">ESCALADOS</div>
+                        <h3 class="mb-0" style="font-weight: 700;">{{ metricas.escalados }}</h3>
+                    </div>
+                    <i class="fas fa-level-up-alt" style="font-size: 2rem; color: #8b5cf6; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros compactos -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <select id="filterUsuario" class="form-select form-select-sm">
+                    <option value="">{{ session.nombre }}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="filterEstado" class="form-select form-select-sm">
+                    <option value="">Estado: Todos</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Planificado">Planificado</option>
+                    <option value="Solucionado">Solucionado</option>
+                    <option value="Cerrado">Cerrado</option>
+                    <option value="Escalado">Escalado</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="filterFecha" class="form-select form-select-sm">
+                    <option value="">Fecha: Todos</option>
+                    <option value="hoy">Hoy</option>
+                    <option value="semana">Última semana</option>
+                    <option value="mes">Último mes</option>
+                    <option value="trimestre">Último trimestre</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Buscar:">
+            </div>
+            <div class="col-md-2 text-end">
+                <button id="btnClearFilters" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-times"></i> Limpiar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs de vista rápida -->
+{% if session.rol == 'solicitante' %}
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link active" href="#" data-quick-filter="mis-activos">
+            <i class="fas fa-tasks"></i> Mis Tickets Activos
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#" data-quick-filter="todos">
+            <i class="fas fa-list"></i> Todos
+        </a>
+    </li>
+</ul>
+{% elif session.rol == 'resolutor' %}
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link active" href="#" data-quick-filter="mis-asignaciones">
+            <i class="fas fa-user-check"></i> Mis Asignaciones
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#" data-quick-filter="todos">
+            <i class="fas fa-list"></i> Todos
+        </a>
+    </li>
+</ul>
+{% endif %}
+
+<!-- Tabla -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="ticketsTable" class="table table-hover mb-0">
+                <thead style="background: #f8f9fa;">
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th style="width: 120px;">ESTADO</th>
+                        <th style="width: 100px;">PRIORIDAD</th>
+                        <th style="width: 150px;">SECCIÓN</th>
+                        <th style="width: 140px;">ASIGNADO A</th>
+                        <th style="width: 100px;">TIEMPO</th>
+                        <th style="width: 180px;">SOLICITANTE</th>
+                        <th class="text-center" style="width: 100px;">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            <a href="{{ url_for('solicitudes.ver', id=ticket.id) }}" style="color: #0d6efd; font-weight: 600; font-size: 0.9rem;">
+                                #{{ '%05d'|format(ticket.id) }}
+                            </a>
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <span class="badge" style="background: {% if ticket.estado == 'Pendiente' %}#fef3c7; color: #92400e{% elif ticket.estado == 'Planificado' %}#dbeafe; color: #1e40af{% elif ticket.estado == 'Solucionado' %}#d1fae5; color: #065f46{% elif ticket.estado == 'Cerrado' %}#e5e7eb; color: #374151{% elif ticket.estado == 'Escalado' %}#fed7aa; color: #9a3412{% else %}#dbeafe; color: #1e40af{% endif %}; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">
+                                {{ ticket.estado }}
+                                {% if ticket.veces_reabierto and ticket.veces_reabierto > 0 %}
+                                <i class="fas fa-redo ml-1" title="Reabierto {{ ticket.veces_reabierto }} vez(ces)" style="font-size: 0.7rem;"></i>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <span class="badge" style="background: {% if ticket.prioridad == 'Alta' %}#fee2e2; color: #991b1b{% elif ticket.prioridad == 'Media' %}#fef3c7; color: #92400e{% else %}#f3f4f6; color: #374151{% endif %}; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">
+                                {% if ticket.prioridad == 'Alta' %}<i class="fas fa-arrow-up" style="font-size: 0.7rem;"></i>{% endif %} {{ ticket.prioridad }}
+                            </span>
+                        </td>
+                        <td style="vertical-align: middle; font-size: 0.85rem;">{{ ticket.seccion }}</td>
+                        <td style="vertical-align: middle;">
+                            {% if ticket.resuelto_por %}
+                            <span class="badge" style="background: #dbeafe; color: #1e40af; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; white-space: nowrap;">
+                                <i class="fas fa-user" style="font-size: 0.7rem;"></i> {{ ticket.resuelto_por_usuario.nombre.split()[0] if ticket.resuelto_por_usuario else 'N/A' }}
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: #f3f4f6; color: #6b7280; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; white-space: nowrap;">Sin asignar</span>
+                            {% endif %}
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <small class="text-muted" data-timestamp="{{ ticket.created_at.isoformat() }}" style="font-size: 0.8rem; white-space: nowrap;">
+                                {{ ticket.created_at.strftime('%d/%m/%Y') }}
+                            </small>
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.7rem; font-weight: 600; margin-right: 0.5rem; flex-shrink: 0;">
+                                    {{ ticket.usuario.nombre[:2].upper() }}
+                                </div>
+                                <span style="font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ticket.usuario.nombre.split()[0] }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center" style="vertical-align: middle;">
+                            <a href="{{ url_for('solicitudes.ver', id=ticket.id) }}" class="btn btn-sm btn-primary" title="Ver ticket" style="padding: 0.35rem 0.75rem; border-radius: 6px;">
+                                <i class="fas fa-eye" style="font-size: 0.85rem;"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<style>
+.dataTables_info {
+    display: none !important;
+}
+</style>
+<script>
+var table;
+var currentFilter = null;
+var autoRefreshInterval;
+
+$(document).ready(function() {
+    table = $('#ticketsTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+        },
+        "order": [[0, "desc"]],
+        "pageLength": 50,
+        "dom": 'rtip',
+        "searching": true,
+        "info": false
+    });
+    
+    // Tiempo relativo
+    function updateRelativeTimes() {
+        $('[data-timestamp]').each(function() {
+            var timestamp = new Date($(this).data('timestamp'));
+            var now = new Date();
+            var diff = Math.floor((now - timestamp) / 1000);
+            
+            var text = '';
+            if (diff < 60) text = 'Hace ' + diff + ' seg';
+            else if (diff < 3600) text = 'Hace ' + Math.floor(diff / 60) + ' min';
+            else if (diff < 86400) text = 'Hace ' + Math.floor(diff / 3600) + ' h';
+            else text = 'Hace ' + Math.floor(diff / 86400) + ' días';
+            
+            $(this).text(text);
+        });
+    }
+    updateRelativeTimes();
+    setInterval(updateRelativeTimes, 60000);
+    
+    // Click en tarjetas de métricas
+    $('.metric-card').on('click', function() {
+        var filter = $(this).data('filter');
+        $('.metric-card').removeClass('shadow-lg').css('transform', 'scale(1)');
+        
+        if (currentFilter === filter) {
+            currentFilter = null;
+            table.column(1).search('').draw();
+            $('#filterEstado').val('');
+        } else {
+            currentFilter = filter;
+            $(this).addClass('shadow-lg').css('transform', 'scale(1.05)');
+            
+            if (filter === 'sla_vencido') {
+                table.column(1).search('').draw();
+            } else {
+                table.column(1).search(filter).draw();
+                $('#filterEstado').val(filter);
+            }
+        }
+    });
+    
+    $('#searchBox').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+    
+    $('#filterEstado').on('change', function() {
+        currentFilter = this.value;
+        table.column(1).search(this.value).draw();
+        
+        $('.metric-card').removeClass('shadow-lg').css('transform', 'scale(1)');
+        if (this.value) {
+            $('.metric-card[data-filter="' + this.value + '"]').addClass('shadow-lg').css('transform', 'scale(1.05)');
+        }
+    });
+    
+    // Filtro de fecha
+    $('#filterFecha').on('change', function() {
+        var filter = this.value;
+        var now = new Date();
+        
+        $.fn.dataTable.ext.search.pop();
+        
+        if (filter) {
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                var dateStr = data[8];
+                if (!dateStr) return true;
+                
+                var parts = dateStr.match(/(\d+)\/(\d+)\/(\d+)/);
+                if (!parts) return true;
+                
+                var ticketDate = new Date(parts[3], parts[2] - 1, parts[1]);
+                var diffDays = Math.floor((now - ticketDate) / (1000 * 60 * 60 * 24));
+                
+                if (filter === 'hoy') return diffDays === 0;
+                if (filter === 'semana') return diffDays <= 7;
+                if (filter === 'mes') return diffDays <= 30;
+                if (filter === 'trimestre') return diffDays <= 90;
+                return true;
+            });
+        }
+        
+        table.draw();
+    });
+    
+    $('#btnClearFilters').on('click', function() {
+        currentFilter = null;
+        $('#filterEstado, #filterFecha, #searchBox').val('');
+        $.fn.dataTable.ext.search.pop();
+        table.search('').columns().search('').draw();
+        $('.metric-card').removeClass('shadow-lg').css('transform', 'scale(1)');
+    });
+    
+    // Refresh
+    $('#btnRefresh').on('click', function() {
+        var btn = $(this);
+        btn.find('i').addClass('fa-spin');
+        setTimeout(function() {
+            location.reload();
+        }, 500);
+    });
+    
+    // Auto-refresh cada 60 segundos
+    autoRefreshInterval = setInterval(function() {
+        location.reload();
+    }, 60000);
+    
+    // Acciones rápidas
+    $('.quick-action').on('click', function(e) {
+        e.preventDefault();
+        var btn = $(this);
+        var ticketId = btn.data('id');
+        var action = btn.data('action');
+        
+        var estado = action === 'planificar' ? 'Planificado' : 'Solucionado';
+        var confirmMsg = '¿Cambiar estado a ' + estado + '?';
+        
+        if (confirm(confirmMsg)) {
+            $.ajax({
+                url: '/solicitudes/' + ticketId + '/quick-update',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ estado: estado }),
+                success: function(response) {
+                    location.reload();
+                },
+                error: function() {
+                    alert('Error al actualizar el ticket');
+                }
+            });
+        }
+    });
+    
+    // Vistas rápidas
+    $('[data-quick-filter]').on('click', function(e) {
+        e.preventDefault();
+        $('.nav-link').removeClass('active');
+        $(this).addClass('active');
+        
+        var filter = $(this).data('quick-filter');
+        
+        if (filter === 'mis-activos') {
+            table.column(1).search('^(?!Cerrado).*$', true, false).draw();
+        } else if (filter === 'mis-asignaciones') {
+            table.column(1).search('^(?!Cerrado).*$', true, false).draw();
+        } else {
+            table.column(1).search('').draw();
+        }
+    });
+    
+    // Guardar filtros en localStorage
+    window.addEventListener('beforeunload', function() {
+        localStorage.setItem('ticketFilters', JSON.stringify({
+            estado: $('#filterEstado').val(),
+            fecha: $('#filterFecha').val(),
+            search: $('#searchBox').val()
+        }));
+    });
+    
+    // Restaurar filtros
+    var savedFilters = localStorage.getItem('ticketFilters');
+    if (savedFilters) {
+        try {
+            var filters = JSON.parse(savedFilters);
+            if (filters.estado) $('#filterEstado').val(filters.estado).trigger('change');
+            if (filters.fecha) $('#filterFecha').val(filters.fecha).trigger('change');
+            if (filters.search) $('#searchBox').val(filters.search).trigger('keyup');
+        } catch(e) {}
+    }
+});
+</script>
+{% endblock %}

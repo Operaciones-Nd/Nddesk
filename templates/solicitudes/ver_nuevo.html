@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket #{{ '%05d'|format(ticket.id) }}{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0;">
+        <li class="breadcrumb-item"><a href="{{ url_for('solicitudes.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Detalle del Ticket #{{ '%05d'|format(ticket.id) }}</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-2" style="font-weight: 700;">
+            <i class="fas fa-ticket-alt mr-2"></i>Ticket #{{ '%05d'|format(ticket.id) }}
+            <span class="badge ml-2" style="background: {% if ticket.estado == 'Pendiente' %}#fef3c7; color: #92400e{% elif ticket.estado == 'Cerrado' %}#e5e7eb; color: #374151{% else %}#dbeafe; color: #1e40af{% endif %}">{{ ticket.estado }}</span>
+            <span class="badge ml-1" style="background: {% if ticket.prioridad == 'Alta' %}#fee2e2; color: #991b1b{% else %}#fef3c7; color: #92400e{% endif %}">{{ ticket.prioridad }}</span>
+        </h4>
+    </div>
+    <div>
+        <a href="{{ url_for('solicitudes.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+        {% if session.rol in ['admin', 'resolutor', 'coordinador'] %}
+            {% if not ticket.resuelto_por and ticket.estado == 'Pendiente' %}
+            <form method="POST" action="{{ url_for('solicitudes.tomar_ticket', id=ticket.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fas fa-hand-paper"></i> Tomar Ticket
+                </button>
+            </form>
+            {% endif %}
+            {% if ticket.estado == 'Pendiente' %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                    <i class="fas fa-bars"></i> Transiciones
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#reasignarModal">Reasignar</a>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#cerrarModal">Cerrar Ticket</a>
+                </div>
+            </div>
+            {% elif ticket.estado == 'Solucionado' %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                    <i class="fas fa-bars"></i> Transiciones
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#pendienteModal">Marcar como Pendiente</a>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#cerrarModal">Cerrar este Ticket</a>
+                </div>
+            </div>
+            {% elif ticket.estado == 'Cerrado' %}
+            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#reabrirModal">
+                <i class="fas fa-redo"></i> Reabrir Ticket
+            </button>
+            {% elif ticket.estado != 'Cerrado' %}
+            <a href="{{ url_for('solicitudes.editar', id=ticket.id) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit"></i> Editar</a>
+            {% endif %}
+        {% elif session.user_id == ticket.usuario_id and ticket.estado == 'Cerrado' %}
+            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#reabrirModal">
+                <i class="fas fa-redo"></i> Reabrir Ticket
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" id="ticketTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" role="tab">
+            <i class="fas fa-info-circle mr-1"></i>Información
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="seguimiento-tab" data-toggle="tab" href="#seguimiento" role="tab">
+            <i class="fas fa-comments mr-1"></i>Seguimiento
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="archivos-tab" data-toggle="tab" href="#archivos" role="tab">
+            <i class="fas fa-paperclip mr-1"></i>Archivos Adjuntos
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="historial-tab" data-toggle="tab" href="#historial" role="tab">
+            <i class="fas fa-history mr-1"></i>Historial
+        </a>
+    </li>
+</ul>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="tab-content" id="ticketTabsContent">
+            <!-- Tab Información -->
+            <div class="tab-pane fade show active" id="info" role="tabpanel">
+                <div class="card mb-3">
+                    <div class="card-header"><h6 class="mb-0">Información General</h6></div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>ID:</strong></div>
+                            <div class="col-md-9">#{{ '%05d'|format(ticket.id) }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Estado:</strong></div>
+                            <div class="col-md-9">{{ ticket.estado }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Fecha Creación:</strong></div>
+                            <div class="col-md-9">{{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Solicitante:</strong></div>
+                            <div class="col-md-9">{{ ticket.usuario.nombre }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Departamento:</strong></div>
+                            <div class="col-md-9">{{ ticket.departamento }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Responsable:</strong></div>
+                            <div class="col-md-9">{{ ticket.resolutor.nombre if ticket.resolutor else 'Sin asignar' }}</div>
+                        </div>
+                        {% if ticket.veces_reabierto and ticket.veces_reabierto > 0 %}
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Reaperturas:</strong></div>
+                            <div class="col-md-9">
+                                <span class="badge badge-warning">{{ ticket.veces_reabierto }} vez(ces)</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if ticket.motivo_reapertura %}
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Último motivo:</strong></div>
+                            <div class="col-md-9">{{ ticket.motivo_reapertura }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header"><h6 class="mb-0">Detalles Editoriales</h6></div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Medio:</strong></div>
+                            <div class="col-md-9">{{ ticket.medio }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Sección:</strong></div>
+                            <div class="col-md-9">{{ ticket.seccion }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Fecha solicitada:</strong></div>
+                            <div class="col-md-9">{{ ticket.fecha_publicacion.strftime('%d/%m/%Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h6 class="mb-0">Contenido del Ticket</h6></div>
+                    <div class="card-body">
+                        <p style="white-space: pre-wrap;">{{ ticket.descripcion }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Seguimiento -->
+            <div class="tab-pane fade" id="seguimiento" role="tabpanel">
+                <div class="card">
+                    <div class="card-header"><h6 class="mb-0">Comentarios</h6></div>
+                    <div class="card-body p-0">
+                        <!-- Chat Container -->
+                        <div id="chatContainer" style="height: 500px; overflow-y: auto; padding: 1rem; background: #f8f9fa;">
+                            {% if comentarios %}
+                                {% for comentario in comentarios %}
+                                {% if not comentario.es_interno or session.rol in ['admin', 'resolutor', 'coordinador'] %}
+                                <!-- Mensaje -->
+                                <div class="d-flex mb-3 {% if comentario.usuario_id == session.user_id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                                    <div style="max-width: 70%;">
+                                        {% if comentario.usuario_id != session.user_id %}
+                                        <div class="d-flex align-items-center mb-1">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                {{ comentario.usuario.nombre[:2].upper() }}
+                                            </div>
+                                            <small class="ml-2 text-muted"><strong>{{ comentario.usuario.nombre }}</strong></small>
+                                        </div>
+                                        {% endif %}
+                                        <div class="p-3" style="background: {% if comentario.usuario_id == session.user_id %}#dcf8c6{% elif comentario.es_interno %}#fff3cd{% else %}#ffffff{% endif %}; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                            {% if comentario.es_interno %}
+                                            <span class="badge badge-warning mb-2" style="font-size: 0.7rem;">Interno</span>
+                                            {% endif %}
+                                            <p class="mb-1" style="white-space: pre-wrap; word-wrap: break-word;">{{ comentario.contenido }}</p>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ comentario.created_at.strftime('%H:%M') }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            {% else %}
+                            <p class="text-muted text-center mt-5">No hay comentarios aún</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Formulario -->
+                        <div class="border-top p-3" style="background: #fff;">
+                            <form method="POST" action="{{ url_for('solicitudes.agregar_comentario', id=ticket.id) }}">
+                                <textarea name="contenido" class="form-control mb-2" rows="2" placeholder="Escribe un mensaje..." required></textarea>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    {% if session.rol in ['admin', 'resolutor', 'coordinador'] %}
+                                    <div class="form-check">
+                                        <input type="checkbox" name="es_interno" value="true" class="form-check-input" id="esInterno">
+                                        <label class="form-check-label" for="esInterno" style="font-size: 0.85rem;">Interno</label>
+                                    </div>
+                                    {% else %}
+                                    <div></div>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i> Enviar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Archivos -->
+            <div class="tab-pane fade" id="archivos" role="tabpanel">
+                <div class="card">
+                    <div class="card-header"><h6 class="mb-0">Archivos Adjuntos</h6></div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('solicitudes.subir_archivo', id=ticket.id) }}" enctype="multipart/form-data" class="mb-3">
+                            <div class="input-group">
+                                <input type="file" name="archivo" class="form-control" required>
+                                <button type="submit" class="btn btn-primary">Subir</button>
+                            </div>
+                            <small class="text-muted">Archivos permitidos: PDF, Imágenes, Word, Excel. Máximo 10MB</small>
+                        </form>
+                        <hr>
+                        {% if adjuntos %}
+                        <div class="list-group">
+                            {% for adjunto in adjuntos %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file mr-2"></i>
+                                    <a href="/{{ adjunto.ruta_archivo }}" target="_blank">{{ adjunto.nombre_archivo }}</a>
+                                    <small class="text-muted d-block">{{ (adjunto.tamano / 1024)|round(2) }} KB - {{ adjunto.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                                <span class="badge badge-secondary">{{ adjunto.usuario.nombre }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No hay archivos adjuntos</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Historial -->
+            <div class="tab-pane fade" id="historial" role="tabpanel">
+                <div class="card">
+                    <div class="card-header"><h6 class="mb-0">Log de Cambios</h6></div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>FECHA</th>
+                                    <th>TIPO</th>
+                                    <th>RESPONSABLE</th>
+                                    <th>COMENTARIO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ ticket.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>Creación</td>
+                                    <td>{{ ticket.usuario.nombre }}</td>
+                                    <td>Ticket creado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Lateral -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-clock mr-2"></i>Seguimiento y Control</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            {{ ticket.usuario.nombre[:2].upper() }}
+                        </div>
+                        <div class="ml-2">
+                            <strong>{{ ticket.usuario.nombre }}</strong>
+                            <div class="text-muted small">Solicitante</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <strong>Fecha de asignación:</strong> {{ ticket.created_at.strftime('%d/%m/%Y') }}
+                </div>
+                <div class="mb-2">
+                    <strong>Fecha de inicio:</strong> {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}
+                </div>
+                <div class="mb-2">
+                    <strong>Fecha de cierre:</strong> {{ ticket.fecha_cierre.strftime('%d/%m/%Y %H:%M') if ticket.fecha_cierre else 'n/a' }}
+                </div>
+                <div>
+                    <strong>Tiempo de resolución:</strong> 0h
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Marcar como Pendiente -->
+<div class="modal fade" id="pendienteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f59e0b; color: white;">
+                <h5 class="modal-title">Marcar como Pendiente - I-{{ '%06d'|format(ticket.id) }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('solicitudes.marcar_pendiente', id=ticket.id) }}">
+                <div class="modal-body" style="background: #fef3c7;">
+                    <h6 class="mb-3">Marcar como Pendiente</h6>
+                    
+                    <div class="form-group">
+                        <label><strong>Motivo *</strong></label>
+                        <textarea name="motivo_pendiente" class="form-control" rows="4" placeholder="Explica por qué se marca como pendiente..." required></textarea>
+                        <small class="text-muted">Describe la razón por la cual el ticket vuelve a estado pendiente</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn" style="background: #f59e0b; color: white;">MARCAR COMO PENDIENTE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Marcar como Solucionado -->
+<div class="modal fade" id="solucionarModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #0ea5e9; color: white;">
+                <h5 class="modal-title">Marcar como Solucionado - I-{{ '%06d'|format(ticket.id) }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('solicitudes.marcar_solucionado', id=ticket.id) }}">
+                <div class="modal-body" style="background: #e0f2fe;">
+                    <h6 class="mb-3">Marcar como Solucionado</h6>
+                    
+                    <div class="form-group">
+                        <label><strong>Código de Solución</strong></label>
+                        <select name="codigo_solucion" class="form-control" required>
+                            <option value="Agregar Planificado">Agregar Planificado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><strong>Solución</strong></label>
+                        <textarea name="solucion" class="form-control" rows="4" placeholder="Describe la solución aplicada..." required></textarea>
+                        <small class="text-danger">Por favor, ingrese un valor</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn" style="background: #0891b2; color: white;">MARCAR COMO SOLUCIONADO</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cerrar Ticket -->
+<div class="modal fade" id="cerrarModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: white; border-bottom: 1px solid #e5e7eb;">
+                <h5 class="modal-title">Cerrar este Ticket - R-{{ '%06d'|format(ticket.id) }}</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('solicitudes.cerrar', id=ticket.id) }}">
+                <div class="modal-body" style="background: #e0f2fe;">
+                    <h6 class="mb-3">Cerrar este Ticket</h6>
+                    
+                    <div class="form-group">
+                        <label><strong>Estado de Publicación</strong></label>
+                        <select name="estado_publicacion" class="form-control" required>
+                            <option value="">-- Seleccione uno --</option>
+                            <option value="Publicado">✓ Publicado</option>
+                            <option value="Publicado - vendido">Publicado - vendido</option>
+                            <option value="Publicado - no vendido">Publicado - no vendido</option>
+                            <option value="No publicado">No publicado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><strong>Comentarios del Usuario</strong></label>
+                        <textarea name="comentarios_usuario" class="form-control" rows="4" placeholder="Comentarios adicionales..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn" style="background: #0891b2; color: white;">CERRAR ESTE TICKET</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reasignar -->
+<div class="modal fade" id="reasignarModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reasignar Ticket</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('solicitudes.reasignar', id=ticket.id) }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><strong>Asignar a</strong></label>
+                        <select name="resuelto_por" class="form-control" required>
+                            <option value="">Seleccione un resolutor...</option>
+                            {% for usuario in resolutores %}
+                            <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Reasignar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reabrir Ticket -->
+<div class="modal fade" id="reabrirModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f59e0b; color: white;">
+                <h5 class="modal-title"><i class="fas fa-redo mr-2"></i>Reabrir Ticket #{{ '%05d'|format(ticket.id) }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('solicitudes.reabrir', id=ticket.id) }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Atención:</strong> Este ticket será reabierto y volverá a estado <strong>Pendiente</strong>.
+                        {% if ticket.veces_reabierto and ticket.veces_reabierto > 0 %}
+                        <br><small>Este ticket ya ha sido reabierto {{ ticket.veces_reabierto }} vez(ces) anteriormente.</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><strong>Motivo de Reapertura *</strong></label>
+                        <textarea name="motivo_reapertura" class="form-control" rows="4" placeholder="Explica por qué necesitas reabrir este ticket..." required></textarea>
+                        <small class="text-muted">Este motivo será visible en el historial del ticket y notificará al equipo resolutor.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-redo mr-1"></i>Reabrir Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-scroll al final del chat cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    var chatContainer = document.getElementById('chatContainer');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Activar pestaña según el hash en la URL
+    if (window.location.hash) {
+        var hash = window.location.hash;
+        if (hash === '#seguimiento') {
+            $('#seguimiento-tab').tab('show');
+        } else if (hash === '#archivos') {
+            $('#archivos-tab').tab('show');
+        } else if (hash === '#historial') {
+            $('#historial-tab').tab('show');
+        }
+    }
+});
+</script>
+{% endblock %}

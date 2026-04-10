@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if articulo else 'Nuevo' }} Artículo{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h5>{{ 'Editar' if articulo else 'Nuevo' }} Artículo</h5></div>
+    <div class="card-body">
+        <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="mb-3">
+                <label>Título</label>
+                <input type="text" name="titulo" class="form-control" value="{{ articulo.titulo if articulo else '' }}" required>
+            </div>
+            <div class="mb-3">
+                <label>Categoría</label>
+                <input type="text" name="categoria" class="form-control" value="{{ articulo.categoria if articulo else '' }}" required>
+            </div>
+            <div class="mb-3">
+                <label>Contenido</label>
+                <textarea name="contenido" class="form-control" rows="10" required>{{ articulo.contenido if articulo else '' }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label>Tags (separados por coma)</label>
+                <input type="text" name="tags" class="form-control" value="{{ articulo.tags if articulo else '' }}">
+            </div>
+            <div class="mb-3">
+                <label>Visible para roles</label>
+                <select name="roles_permitidos" class="form-select" multiple>
+                    <option value="">Todos los roles</option>
+                    <option value="admin">Administrador</option>
+                    <option value="coordinador">Coordinador</option>
+                    <option value="resolutor">Resolutor</option>
+                    <option value="solicitante">Solicitante</option>
+                </select>
+                <small class="text-muted">Dejar vacío para todos</small>
+            </div>
+            <div class="mb-3">
+                <label>Estado</label>
+                <select name="estado" class="form-select">
+                    <option value="borrador" {{ 'selected' if articulo and articulo.estado == 'borrador' else '' }}>Borrador</option>
+                    <option value="publicado" {{ 'selected' if articulo and articulo.estado == 'publicado' else '' }}>Publicado</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{{ url_for('kb.index') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

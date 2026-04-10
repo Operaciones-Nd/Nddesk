@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Reportes - NDDesk{% endblock %}
+
+{% block content %}
+<div class="content-wrapper" style="background: #f8f9fa; padding-left: 0 !important; padding-right: 0 !important; margin-left: 0 !important;">
+    <section class="content-header" style="padding-left: 10px; padding-right: 10px;">
+        <div class="container-fluid" style="padding-left: 0; padding-right: 0;">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>📊 Reportes y Exportación</h1>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content" style="padding-left: 10px; padding-right: 10px;">
+        <div class="container-fluid" style="max-width: 100%; padding: 0;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Filtros de Búsqueda</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label>Fecha Inicio</label>
+                            <input type="date" id="fecha_inicio" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label>Fecha Fin</label>
+                            <input type="date" id="fecha_fin" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label>Departamento</label>
+                            <select id="departamento" class="form-control">
+                                <option value="">Todos</option>
+                                {% for dept in filtros.departamentos %}
+                                <option value="{{ dept[0] }}">{{ dept[0] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Sección</label>
+                            <select id="seccion" class="form-control">
+                                <option value="">Todas</option>
+                                {% for sec in filtros.secciones %}
+                                <option value="{{ sec }}">{{ sec }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Estado</label>
+                            <select id="estado" class="form-control">
+                                <option value="">Todos</option>
+                                {% for est in filtros.estados %}
+                                <option value="{{ est }}">{{ est }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Prioridad</label>
+                            <select id="prioridad" class="form-control">
+                                <option value="">Todas</option>
+                                {% for pri in filtros.prioridades %}
+                                <option value="{{ pri }}">{{ pri }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <button onclick="aplicarFiltros()" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Aplicar Filtros
+                            </button>
+                            <button onclick="limpiarFiltros()" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </button>
+                            <button onclick="exportarExcel()" class="btn btn-success float-right">
+                                <i class="fas fa-file-excel"></i> Exportar a Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body" style="padding-left: 5px; padding-right: 5px;">
+                    <div style="padding-left: 10px; padding-right: 10px;">
+                        <table id="ticketsTable" class="table table-bordered table-striped" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Sección</th>
+                                    <th>Asignado</th>
+                                    <th>Fecha</th>
+                                    <th>Solicitante</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script>
+let table;
+
+$(document).ready(function() {
+    table = $('#ticketsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/api/tickets/datatable',
+            type: 'POST',
+            data: function(d) {
+                d.tab = 'historico';
+                d.fecha_inicio = $('#fecha_inicio').val();
+                d.fecha_fin = $('#fecha_fin').val();
+                d.departamento = $('#departamento').val();
+                d.seccion = $('#seccion').val();
+                d.estado = $('#estado').val();
+                d.prioridad = $('#prioridad').val();
+            }
+        },
+        columns: [
+            { data: 0 },
+            { data: 1 },
+            { data: 2 },
+            { data: 3 },
+            { data: 4 },
+            { data: 5 },
+            { data: 6 },
+            { data: 7 }
+        ],
+        order: [[0, 'desc']],
+        pageLength: 25,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        dom: 'rt<"row mt-3"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        autoWidth: false,
+        scrollX: false,
+        responsive: true
+    });
+});
+
+function aplicarFiltros() {
+    table.ajax.reload();
+}
+
+function limpiarFiltros() {
+    $('#fecha_inicio').val('');
+    $('#fecha_fin').val('');
+    $('#departamento').val('');
+    $('#seccion').val('');
+    $('#estado').val('');
+    $('#prioridad').val('');
+    table.ajax.reload();
+}
+
+function exportarExcel() {
+    const params = new URLSearchParams({
+        fecha_inicio: $('#fecha_inicio').val(),
+        fecha_fin: $('#fecha_fin').val(),
+        departamento: $('#departamento').val(),
+        seccion: $('#seccion').val(),
+        estado: $('#estado').val(),
+        prioridad: $('#prioridad').val()
+    });
+    window.location.href = '/solicitudes/reportes/exportar?' + params.toString();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Sección - NDvision{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white;">
+        <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>Nueva Sección</h3>
+    </div>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="card-body">
+            <div class="form-group">
+                <label>Nombre de la Sección <span class="text-danger">*</span></label>
+                <input type="text" name="nombre" class="form-control" required placeholder="Ej: Investigación">
+            </div>
+            <div class="form-group">
+                <label>Medio <span class="text-danger">*</span></label>
+                <select name="medio" class="form-control" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="Nuestro Diario">Nuestro Diario</option>
+                    <option value="Soy502">Soy502</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" class="form-control" rows="3" placeholder="Descripción opcional"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Email de Notificación</label>
+                <input type="email" name="email_notificacion" class="form-control" placeholder="grupo@nuestrodiario.com.gt">
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i>Guardar</button>
+            <a href="{{ url_for('secciones.index') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

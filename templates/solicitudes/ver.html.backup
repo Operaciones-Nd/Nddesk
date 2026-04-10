@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ticket.id }} - Tickets ND{% endblock %}
+
+{% block content %}
+<style>
+/* RESET COMPLETO - v2.0 */
+body.sidebar-mini.layout-fixed .content-wrapper,
+body.sidebar-mini.layout-fixed .content-wrapper > .content,
+.content-wrapper,
+.content-wrapper > .content,
+.container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+}
+
+.ticket-view-container {
+    display: flex !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    min-height: calc(100vh - 120px) !important;
+    background: #f8fafc !important;
+    width: 100vw !important;
+    position: relative !important;
+    left: 0 !important;
+}
+
+.ticket-sidebar {
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    background: white !important;
+    border-right: 1px solid #e2e8f0 !important;
+    padding: 1.5rem !important;
+    overflow-y: auto !important;
+    height: calc(100vh - 120px) !important;
+    position: sticky !important;
+    top: 0 !important;
+}
+
+.ticket-main {
+    flex: 1;
+    background: #f8fafc;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.ticket-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ticket-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.sidebar-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+}
+
+.sidebar-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+}
+
+.sidebar-field {
+    margin-bottom: 1rem;
+}
+
+.sidebar-field:last-child {
+    margin-bottom: 0;
+}
+
+.field-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.25rem;
+}
+
+.field-value {
+    font-size: 0.875rem;
+    color: #1e293b;
+    word-break: break-word;
+}
+
+.field-value a {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.field-value a:hover {
+    text-decoration: underline;
+}
+
+.action-menu {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: white;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.action-btn:last-child {
+    border-bottom: none;
+}
+
+.action-btn:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.content-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.content-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.content-card-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.description-text {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #334155;
+    white-space: pre-wrap;
+}
+
+.bitacora-box {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.bitacora-box:last-child {
+    margin-bottom: 0;
+}
+
+.bitacora-public {
+    background: #dbeafe;
+    border-left: 3px solid #3b82f6;
+}
+
+.bitacora-private {
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+}
+
+.bitacora-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.solution-box {
+    background: #d1fae5;
+    border-left: 3px solid #10b981;
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.solution-text {
+    color: #065f46;
+    font-weight: 600;
+    margin: 0;
+}
+</style>
+
+<div class="ticket-view-container">
+    <!-- Sidebar Izquierdo -->
+    <div class="ticket-sidebar">
+        <div class="ticket-number">
+            <i class="fas fa-exclamation-circle" style="color: #f59e0b;"></i>
+            {{ ticket.id }}
+        </div>
+        
+        <div class="ticket-status-badge status-{{ ticket.estado.lower().replace(' ', '-') }}">
+            <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+            {{ ticket.estado }}
+        </div>
+
+        <!-- Información General -->
+        <div class="sidebar-section">
+            <div class="sidebar-title">Información General</div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Organización</div>
+                <div class="field-value">Diarios Modernos S.A</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Reportado por</div>
+                <div class="field-value">
+                    <a href="#">{{ ticket.usuario.nombre }}</a>
+                </div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Estatus</div>
+                <div class="field-value">
+                    <span class="badge badge-status status-{{ ticket.estado.lower().replace(' ', '-') }}">
+                        {{ ticket.estado }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Origen</div>
+                <div class="field-value">Portal</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Asunto</div>
+                <div class="field-value">{{ ticket.tipo_contenido }}</div>
+            </div>
+        </div>
+
+        <!-- Clasificación -->
+        <div class="sidebar-section">
+            <div class="sidebar-title">Clasificación</div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Impacto</div>
+                <div class="field-value">{{ ticket.departamento }}</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Urgencia</div>
+                <div class="field-value">{{ ticket.prioridad }}</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Prioridad</div>
+                <div class="field-value">
+                    <span class="badge badge-priority priority-{{ ticket.prioridad.lower() }}">
+                        {{ ticket.prioridad }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contactos -->
+        <div class="sidebar-section">
+            <div class="sidebar-title">Contactos</div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Grupo</div>
+                <div class="field-value" style="color: #dc2626;">{{ ticket.grupo_resuelve }}</div>
+            </div>
+            
+            {% if ticket.resolutor %}
+            <div class="sidebar-field">
+                <div class="field-label">Analista</div>
+                <div class="field-value">
+                    <a href="#">{{ ticket.resolutor.nombre }}</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Fechas -->
+        <div class="sidebar-section">
+            <div class="sidebar-title">Fechas</div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Fecha de Inicio</div>
+                <div class="field-value">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Última Actualización</div>
+                <div class="field-value">{{ ticket.updated_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.updated_at else ticket.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Fecha de Publicación</div>
+                <div class="field-value">{{ ticket.fecha_publicacion.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            </div>
+        </div>
+
+        <!-- Más Información -->
+        <div class="sidebar-section">
+            <div class="sidebar-title">Más Información</div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Servicio</div>
+                <div class="field-value" style="color: #dc2626;">{{ ticket.servicio }}</div>
+            </div>
+            
+            <div class="sidebar-field">
+                <div class="field-label">Subcategoría</div>
+                <div class="field-value" style="color: #dc2626;">{{ ticket.familia_servicios }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="ticket-main">
+        <!-- Tabs -->
+        <div class="content-tabs">
+            <button class="tab-btn active">Propiedades</button>
+            <button class="tab-btn">Bitácoras</button>
+        </div>
+        <!-- Descripción -->
+        <div class="content-card">
+            <div class="content-card-title">Descripción</div>
+            <div class="description-text">{{ ticket.descripcion }}</div>
+        </div>
+
+        <!-- Solución -->
+        {% if ticket.solucion %}
+        <div class="content-card">
+            <div class="content-card-title">Solución</div>
+            <div class="solution-box">
+                <p class="solution-text">{{ ticket.solucion }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Bitácoras -->
+        {% if ticket.bitacora_publica or ticket.bitacora_oculta %}
+        <div class="content-card">
+            <div class="content-card-title">Bitácoras</div>
+            
+            {% if ticket.bitacora_publica %}
+            <div class="bitacora-box bitacora-public">
+                <div class="bitacora-label" style="color: #1e40af;">
+                    <i class="fas fa-eye"></i>
+                    Bitácora Pública
+                </div>
+                <div class="description-text">{{ ticket.bitacora_publica }}</div>
+            </div>
+            {% endif %}
+            
+            {% if ticket.bitacora_oculta and session.rol in ['admin', 'resolutor', 'coordinador'] %}
+            <div class="bitacora-box bitacora-private">
+                <div class="bitacora-label" style="color: #92400e;">
+                    <i class="fas fa-eye-slash"></i>
+                    Bitácora Privada
+                </div>
+                <div class="description-text">{{ ticket.bitacora_oculta }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- Menú de Acciones Flotante -->
+<div class="action-menu">
+    <button class="action-btn" onclick="window.location.href='{{ url_for('solicitudes.index') }}'">
+        <i class="fas fa-arrow-left"></i>
+        Volver
+    </button>
+    {% if session.rol in ['admin', 'resolutor', 'coordinador'] and ticket.estado != 'Cerrado' %}
+    <button class="action-btn" onclick="window.location.href='{{ url_for('solicitudes.editar', id=ticket.id) }}'">
+        <i class="fas fa-edit"></i>
+        Editar
+    </button>
+    <button class="action-btn">
+        <i class="fas fa-check-circle"></i>
+        Marcar como Solucionado
+    </button>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Departamentos - NDvision{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white;">
+        <h3 class="card-title"><i class="fas fa-building mr-2"></i>Departamentos Solicitantes</h3>
+        <div class="card-tools">
+            <a href="{{ url_for('departamentos.nuevo') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus mr-1"></i>Nuevo Departamento
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in departamentos %}
+                <tr>
+                    <td><strong>{{ dept.nombre }}</strong></td>
+                    <td>{{ dept.descripcion or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('departamentos.editar', id=dept.id) }}" class="btn btn-sm btn-info">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('departamentos.eliminar', id=dept.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar departamento?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Base de Conocimiento - NDvision{% endblock %}
+{% block content %}
+<style>
+.kb-header {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.kb-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.kb-subtitle {
+    font-size: 0.9375rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.search-bar {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+}
+
+.search-input {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+    outline: none;
+}
+
+.category-select {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+}
+
+.article-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s;
+    height: 100%;
+    background: white;
+}
+
+.article-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+}
+
+.article-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+    text-decoration: none;
+}
+
+.article-title:hover {
+    color: #3b82f6;
+}
+
+.article-excerpt {
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.category-badge {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.views-count {
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+</style>
+
+<div class="kb-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="kb-title">Base de Conocimiento</h1>
+            <p class="kb-subtitle mb-0">Documentación y recursos del sistema editorial</p>
+        </div>
+        {% if session.rol in ['admin', 'coordinador'] %}
+        <a href="{{ url_for('kb.nuevo') }}" class="btn btn-light">
+            <i class="fas fa-plus mr-2"></i>Nuevo Artículo
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="search-bar">
+    <div class="row">
+        <div class="col-md-8">
+            <input type="text" id="busqueda" class="form-control search-input" placeholder="Buscar en la base de conocimiento...">
+        </div>
+        <div class="col-md-4">
+            <select id="categoria" class="form-select category-select">
+                <option value="">Todas las categorías</option>
+                {% for cat in categorias %}
+                <option value="{{ cat[0] }}">{{ cat[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for articulo in articulos %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card article-card">
+            <div class="card-body">
+                <a href="{{ url_for('kb.ver', id=articulo.id) }}" class="article-title d-block">
+                    {{ articulo.titulo }}
+                </a>
+                <p class="article-excerpt">{{ articulo.contenido[:120] }}...</p>
+                <div class="article-meta">
+                    <span class="category-badge">{{ articulo.categoria }}</span>
+                    <span class="views-count">
+                        <i class="fas fa-eye mr-1"></i>{{ articulo.vistas }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+$('#busqueda').on('keyup', function() {
+    const q = $(this).val();
+    if (q.length > 2) {
+        window.location.href = '{{ url_for("kb.index") }}?q=' + q;
+    }
+});
+$('#categoria').on('change', function() {
+    window.location.href = '{{ url_for("kb.index") }}?categoria=' + $(this).val();
+});
+</script>
+{% endblock %}

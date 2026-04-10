@@ -1,0 +1,2 @@
+# Dependencias adicionales para módulo de reportes
+reportlab==4.0.7

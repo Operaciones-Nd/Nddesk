@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Editar Flujo{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h5>{{ flujo.nombre }}</h5></div>
+    <div class="card-body">
+        <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Nombre</label>
+                    <input type="text" name="nombre" class="form-control" value="{{ flujo.nombre }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Estado</label>
+                    <select name="activo" class="form-select">
+                        <option value="true" {{ 'selected' if flujo.activo else '' }}>Activo</option>
+                        <option value="false" {{ 'selected' if not flujo.activo else '' }}>Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label>Descripción</label>
+                <textarea name="descripcion" class="form-control" rows="3">{{ flujo.descripcion }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </form>
+        
+        <hr>
+        
+        <h5>Transiciones</h5>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Nombre</th>
+                    <th>Requiere</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trans in flujo.transiciones %}
+                <tr>
+                    <td>{{ trans.estado_origen }}</td>
+                    <td>{{ trans.estado_destino }}</td>
+                    <td>{{ trans.nombre }}</td>
+                    <td>
+                        {% if trans.requiere_comentario %}<span class="badge bg-info">Comentario</span>{% endif %}
+                        {% if trans.requiere_adjunto %}<span class="badge bg-warning">Adjunto</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <button class="btn btn-success" onclick="agregarTransicion()">Agregar Transición</button>
+    </div>
+</div>
+
+<script>
+function agregarTransicion() {
+    const origen = prompt('Estado origen:');
+    const destino = prompt('Estado destino:');
+    const nombre = prompt('Nombre de la transición:');
+    
+    if (origen && destino && nombre) {
+        fetch('{{ url_for("flujo.agregar_transicion", id=flujo.id) }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `estado_origen=${origen}&estado_destino=${destino}&nombre=${nombre}`
+        }).then(() => location.reload());
+    }
+}
+</script>
+{% endblock %}
