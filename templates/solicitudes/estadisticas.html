@@ -322,7 +322,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card chart-card">
             <div class="card-body">
                 <div class="chart-icon" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
@@ -331,7 +331,7 @@
                 <div class="chart-title">Tickets por Departamento</div>
                 <div class="chart-subtitle">Distribución por departamento</div>
                 <div class="chart-scroll">
-                    <div class="chart-wrap" style="max-width: 340px;">
+                    <div class="chart-wrap">
                         <canvas id="chartDepartamento"></canvas>
                         <div class="chart-total"><div class="chart-total-number" id="totalDepto"></div><div class="chart-total-label">Total</div></div>
                     </div>
@@ -339,7 +339,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card chart-card">
             <div class="card-body">
                 <div class="chart-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
@@ -348,7 +348,7 @@
                 <div class="chart-title">Top Resolutores</div>
                 <div class="chart-subtitle">Usuarios con más tickets resueltos</div>
                 <div class="chart-scroll">
-                    <div class="chart-wrap" style="max-width: 340px;">
+                    <div class="chart-wrap">
                     <canvas id="chartResolutores"></canvas>
                         <div class="chart-total"><div class="chart-total-number" id="totalRes"></div><div class="chart-total-label">Total</div></div>
                     </div>
@@ -761,12 +761,10 @@ function chartOpts(totalEl, data) {
                 }
             },
             datalabels: {
-                color: '#fff', font: { weight: 'bold', size: 10 },
-                formatter: function(v) { var pct = ((v / total) * 100).toFixed(0); return v + ' (' + pct + '%)'; },
+                color: '#fff', font: { weight: 'bold', size: 11 },
+                formatter: function(v) { var pct = ((v / total) * 100).toFixed(0); return v + '\n' + pct + '%'; },
                 textAlign: 'center',
-                display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] / total > 0.03; },
-                anchor: 'center',
-                clamp: true
+                display: true
             }
         },
         onHover: function(e, els) { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
