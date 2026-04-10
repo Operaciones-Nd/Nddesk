@@ -118,6 +118,14 @@
                             <div class="col-md-9">{{ ticket.departamento }}</div>
                         </div>
                         <div class="row mb-2">
+                            <div class="col-md-3"><strong>Servicio:</strong></div>
+                            <div class="col-md-9">{{ ticket.servicio or 'Sin asignar' }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><strong>Subcategoría:</strong></div>
+                            <div class="col-md-9">{{ ticket.tipo_contenido or 'Sin asignar' }}</div>
+                        </div>
+                        <div class="row mb-2">
                             <div class="col-md-3"><strong>Responsable:</strong></div>
                             <div class="col-md-9">{{ ticket.resolutor.nombre if ticket.resolutor else 'Sin asignar' }}</div>
                         </div>
